@@ -1,0 +1,9 @@
+networkx>=3.2
+python-frontmatter>=1.0
+python-louvain>=0.16
+sentence-transformers>=2.5
+hdbscan>=0.8
+numpy>=1.26
+scikit-learn>=1.4
+pyvis>=0.3
+jinja2>=3.1
