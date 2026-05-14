@@ -10,7 +10,7 @@ Welche Wissensnetzwerke existieren in einem Obsidian-Vault, und wie lassen sich 
 
 Ein Wissensnetzwerk gilt als identifiziert, wenn es in mindestens zwei der drei Sichten als kohärenter Cluster mit paarweiser Jaccard-Übereinstimmung von mindestens 0.6 erscheint. Konvergenzen sind Befund, Divergenzen sind Diagnose.
 
-Begründung in [METHODIK.md](METHODIK.md). Projektkonzept und Ziele in [knowledge/00-projektkonzept.md](knowledge/00-projektkonzept.md).
+Methodische Position in [METHODIK.md](METHODIK.md). Operativer Plan in [knowledge/projektkonzept.md](knowledge/projektkonzept.md).
 
 ## Architektur
 
@@ -37,16 +37,7 @@ Im `output/`-Verzeichnis (nicht versioniert):
 
 ## Privacy
 
-Strikt by default. Business-Knoten werden anonymisiert (`Angebot-{hash8}`), sensitive Frontmatter-Felder gestrippt, Volltexte aus `Business/Angebote/` nicht in Embeddings einbezogen. Methodische Konsequenzen in [knowledge/methodik-validierung.md](knowledge/methodik-validierung.md).
-
-## Methodisches Fundament
-
-Vier Dokumente in `knowledge/`:
-
-- [00-projektkonzept.md](knowledge/00-projektkonzept.md) — Frage, Ziele, Architektur, Vorgehen, Erfolgskriterien
-- [wissensnetzwerk-definition.md](knowledge/wissensnetzwerk-definition.md) — drei konkurrierende Definitionen, integrierte Position
-- [methodik-triangulation.md](knowledge/methodik-triangulation.md) — Konvergenz, Divergenz, Schwellwerte mit Begründung
-- [methodik-validierung.md](knowledge/methodik-validierung.md) — Befund, Diagnose, Hypothese; Privacy; Reproduzierbarkeit
+Strikt by default. Business-Knoten werden anonymisiert (`Angebot-{hash8}`), sensitive Frontmatter-Felder gestrippt, Volltexte aus `Business/Angebote/` nicht in Embeddings einbezogen. Methodische Konsequenzen in [METHODIK.md](METHODIK.md).
 
 ## Ausführung
 
@@ -59,4 +50,4 @@ Konfiguration als Konstanten in `vault_graph/__main__.py` (Vault-Pfad, Schwellwe
 
 ## Status
 
-Commit 1 — methodisches Fundament und Modul-Gerüst. Implementation der Phasen folgt in den Commits 2 bis 6, jeweils mit Gate-Kontrolle vor dem nächsten Schritt. Detail in [knowledge/00-projektkonzept.md](knowledge/00-projektkonzept.md).
+Commit 1 — methodisches Fundament und Modul-Gerüst. Implementation der Phasen folgt in den Commits 2 bis 6, jeweils mit Gate-Kontrolle vor dem nächsten Schritt. Detail in [knowledge/projektkonzept.md](knowledge/projektkonzept.md).

@@ -1,119 +1,121 @@
 # Methodik
 
-Die epistemologische Position dieses Tools. Wer mit den Ergebnissen arbeitet, sollte zuerst hier lesen.
+Die epistemische Position des Tools auf einer Seite. Projektkonzept in [knowledge/projektkonzept.md](knowledge/projektkonzept.md).
 
-## Die Frage
+## Frage
 
-Ein Obsidian-Vault enthält hunderte Wikilinks zwischen Konzepten. Aus diesem Linkgraph lässt sich ein hübsches Force-Directed-Diagramm zeichnen. Die Suggestion dieser Visualisierung ist stark: das Bild zeigt Cluster, also gibt es Wissensnetzwerke.
+Ein Cluster im Linkgraph eines Obsidian-Vaults ist eine topologische Beobachtung. Ob daraus ein *Wissensnetzwerk* wird, also eine epistemisch gehaltvolle Gruppierung von Dokumenten, ist eine separate Frage. Vault-graph trennt beides und macht beide Schritte nachvollziehbar.
 
-Diese Schlussfolgerung ist nicht zulässig. Ein Cluster im Linkgraph ist eine topologische Beobachtung. Ob daraus ein **Wissensnetzwerk** wird — also eine epistemisch gehaltvolle Gruppierung von Dokumenten —, ist eine separate Frage.
+## Drei Sichten
 
-Dieses Tool unterscheidet die topologische Beobachtung vom epistemischen Anspruch und macht beide nachvollziehbar.
+Drei methodisch unabhängige Antworten, von denen keine allein hinreicht.
 
-## Was ist ein Wissensnetzwerk?
+| Sicht | Datengrundlage | Algorithmus | Annahme |
+|---|---|---|---|
+| Topologisch | Wikilinks | Louvain | Wikilinks materialisieren epistemische Nähe |
+| Semantisch | Body-Text (Titel + erste 500 Zeichen) | HDBSCAN auf Sentence-Embeddings | Sprache markiert epistemische Zugehörigkeit |
+| Pragmatisch | MOC-Mitgliedschaft, Tags, Ordner | Mengenoperationen | Hubs materialisieren intentionale Strukturierung |
 
-Drei konkurrierende Antworten konkurrieren in der Literatur und in der Praxis. Jede ist plausibel, jede ist unvollständig.
+Topologie kennt die Sprache nicht, Semantik kennt die Links nicht, Pragmatik kennt beides nicht direkt. Übereinstimmung zwischen unabhängigen Verfahren ist epistemisch stärker als ein einzelner Befund (Denzin 1978).
 
-### Antwort 1 — Topologisch
+## Definition
 
-Ein Wissensnetzwerk ist eine Community im Linkgraph: eine Knotengruppe, die untereinander dichter verlinkt ist als zur Außenwelt. Methodisch: Louvain, Leiden, Modularitätsmaximierung (Newman 2006).
+Ein **Wissensnetzwerk** ist eine Knotengruppe, die in mindestens zwei der drei Sichten als kohärenter Cluster identifiziert wird, mit einer paarweisen Jaccard-Übereinstimmung von mindestens 0.6.
 
-Annahme: Wikilinks materialisieren epistemische Nähe. Wenn zwei Dokumente verlinkt sind, gehören ihre Inhalte zusammen.
+Konvergieren alle drei Sichten, gilt das Wissensnetzwerk als robust identifiziert. Konvergiert nur eine, ist die Aussage eine Hypothese.
 
-Problem: Wikilinks entstehen oft aus Schreibflusslogik, nicht aus methodischer Zuordnung. Ein Verweis kann *spezialisieren*, *kontrastieren*, *fundieren* oder *anwenden* meinen — der Topologie ist das egal. Topologische Cluster können Schreib-Gewohnheiten widerspiegeln statt Wissens-Struktur.
+## Schwellwert 0.6
 
-### Antwort 2 — Semantisch
+Jaccard misst die Überlappung zweier Cluster: |A ∩ B| / |A ∪ B|.
 
-Ein Wissensnetzwerk ist eine Gruppe von Dokumenten, die semantisch über dasselbe sprechen. Methodisch: Knoten-Embeddings, Ähnlichkeitsmatrix, Dichte-basiertes Clustering (HDBSCAN).
+- Unter 0.5: schwächer als hälftige Übereinstimmung, zu unsicher
+- 0.5 bis 0.6: Überlappung kann zufällig sein
+- 0.6 bis 0.8: substanzielle Übereinstimmung mit Raum für Querkonzept-Randabweichungen
+- Über 0.8: zu strikt für reale Vaults
 
-Annahme: Sprache ist der direkte Marker für Zugehörigkeit. Wenn zwei Dokumente sprachlich ähnlich sind, behandeln sie verwandte Themen.
+Der Wert ist als Konstante in `vault_graph/__main__.py` hinterlegt. Jede Änderung wird in `output/data/analyses.json` mit Begründung mitgespeichert.
 
-Problem: Semantische Ähnlichkeit erfasst Oberfläche. Zwei Dokumente können dasselbe Vokabular nutzen ohne methodisch verwandt zu sein; zwei andere können methodisch eng zusammenhängen ohne lexikalische Überschneidung. Embedding-Modelle haben außerdem Bias gegenüber häufigen Konstruktionen.
+## Divergenzen als Befund
 
-### Antwort 3 — Pragmatisch
+Divergenzen sind nicht Fehler, sondern eigenständige Information.
 
-Ein Wissensnetzwerk ist eine Menge von Dokumenten, die *zusammen für einen Zweck* mobilisiert werden — Vortrag, Paper, Workshop, Antrag. Methodisch: MOC-Mitgliedschaft, Tag-Gruppen, deklarierte Anker.
+| Typ | Konstellation | Diagnostischer Wert |
+|---|---|---|
+| A | Topologie ohne Semantik | Workflow-, genealogische oder Kontrast-Links |
+| B | Semantik ohne Topologie | Linking-Lücke, konkreter Vorschlag |
+| C | Pragmatik ohne Topologie/Semantik | Veralteter oder bewusst heterogener MOC |
+| D | Topologie + Semantik ohne Pragmatik | Emergentes Wissensnetzwerk ohne Hub |
 
-Annahme: Der Vault-Eigentümer hat durch Hubs und Tags explizit gemacht, welche Dokumente zusammengehören. Diese Zuordnung ist intentional und damit valide.
+## Brückenknoten
 
-Problem: Pragmatische Cluster spiegeln die *Ablage-Logik*, nicht notwendig die *Wissens-Logik*. MOCs werden gepflegt, wenn Zeit ist, und veralten. Tags sind im Schreibmoment gesetzt, nicht aus Distanz reflektiert.
+Querkonzepte sind in mehreren Clustern aktiv. Drei Bedingungen:
 
-## Triangulation als Antwort
+- Topologisch: hohe Betweenness bei moderater Degree (Z-Score ≥ 1.5)
+- Semantisch: Embedding nahe an mehreren Cluster-Zentroiden
+- Pragmatisch: Mitglied mehrerer MOCs
 
-Keine der drei Antworten ist allein hinreichend. Aber sie sind **methodisch unabhängig**: Topologie kennt die Sprache nicht, Semantik kennt die Links nicht, Pragmatik kennt beides nicht direkt.
+Ein Knoten ist **Querkonzept**, wenn mindestens zwei Bedingungen erfüllt sind. Datengetriebene Anker-Liste in `findings/querkonzepte.md`.
 
-Konvergenz dreier unabhängiger Methoden auf dasselbe Ergebnis ist epistemisch stärker als ein Befund aus einer Methode (Triangulation, Denzin 1978). Wenn ein Cluster topologisch, semantisch und pragmatisch übereinstimmend identifiziert wird, ist die Hypothese "dies ist ein Wissensnetzwerk" robust gestützt.
+## Drei Aussagetypen
 
-Genauso wichtig sind die **Divergenzen**:
+Jede Aussage in den Findings ist genau einer Klasse zugeordnet.
 
-- **Topologie ohne Semantik** — Knoten sind verlinkt, aber sprechen nicht ähnlich → der Linkgraph ist hier durch andere Logik gewachsen (Workflow, Genealogie, kontrastierende Verweise).
-- **Semantik ohne Topologie** — Knoten sind sprachlich nah, aber nicht verlinkt → **fehlende Links**, Pflege-Vorschlag.
-- **Pragmatik ohne Topologie/Semantik** — MOC sammelt Knoten, die weder verlinkt noch sprachlich verwandt sind → MOC veraltet, Pflege-Vorschlag.
-- **Topologie + Semantik ohne Pragmatik** — Cluster ist real, aber kein MOC adressiert ihn → **emergentes Wissensnetzwerk**, MOC-Kandidat.
+**Befund.** Datengestützt, prüfbar. Beispiel: "Cluster 7 enthält 47 Knoten." Wer den Code mit denselben Daten erneut laufen lässt, kommt zur selben Aussage.
 
-## Operationalisierung
+**Diagnose.** Datengestützte Auffälligkeit, die Pflege nahelegt. Beispiel: "Knoten A hat semantische Nähe ≥ 0.8 zu B, ist aber nicht verlinkt — möglicher fehlender Link." Anlass, keine Anweisung.
 
-Konkret im Tool:
+**Hypothese.** Nur eine Sicht gestützt. Mit `[HYPOTHESE]` markiert.
 
-**Stützungs-Score pro Knotengruppe.** Für jede in einer der drei Sichten identifizierte Gruppe wird geprüft, ob mindestens 60% ihrer Knoten auch in einer zweiten Sicht zusammen erscheinen. Bei Konvergenz in zwei Sichten: identifiziertes Wissensnetzwerk. Bei Konvergenz in drei Sichten: robust identifiziertes Wissensnetzwerk. Bei nur einer Sicht: Hypothese.
-
-**Schwellwert begründet, nicht beliebig.** 60% ist gewählt, weil unterhalb der Konvergenz-Anteil zufällig sein kann (zwei Cluster, die zufällig überlappen). 80% wäre zu strikt für reale Vault-Daten mit Querkonzepten, die per Definition in mehreren Clustern auftauchen. Schwellwert ist im Code dokumentiert und änderbar; jede Änderung muss in METHODIK.md begründet werden.
-
-**Brückenknoten als datengetriebene Querkonzepte.** Knoten mit hoher Betweenness-Centrality bei moderater Degree (Z-Score-basiert) sind topologische Brücken. Wenn sie zusätzlich in mehreren semantischen Clustern hohe Ähnlichkeit aufweisen, sind sie Querkonzepte im strengen Sinn. Ohne diese Doppelbedingung sind sie nur topologische Brücken.
-
-## Falsifizierbarkeit
-
-Das Tool macht Aussagen. Diese Aussagen müssen prüfbar sein, damit das Tool methodisch erwachsen ist.
-
-**Prüfbare Aussagen** (Beispiele aus den Findings):
-
-- "Cluster X enthält 47 Knoten." → durch Auszählen falsifizierbar
-- "Cluster X hat Modularität 0.42." → durch Neuberechnung falsifizierbar
-- "Cluster X ist semantisch kohärent (Silhouette-Score 0.31)." → durch Neuberechnung falsifizierbar
-- "Knoten K hat Betweenness 0.34." → durch Neuberechnung falsifizierbar
-- "Es gibt 12 tote Wikilinks." → durch Inspektion falsifizierbar
-- "Cluster X und MOC Y überlappen zu 73%." → durch Mengenoperation falsifizierbar
-
-**Nicht prüfbare, aber begründete Aussagen:**
-
-- "Cluster X ist ein Wissensnetzwerk." — folgt aus Schwellwert (begründet in METHODIK.md), aber Schwellwert selbst ist Konvention
-- "Knoten K ist ein Querkonzept." — folgt aus Brückenknoten-Definition (Betweenness + Multi-Cluster-Semantik), aber Definition selbst ist Konvention
-
-**Niemals als Aussagen formuliert:**
-
-- "Cluster X ist *wichtig*." — Wichtigkeit ist nicht messbar
-- "Knoten K *sollte* gepflegt werden." — Sollens-Aussagen sind nicht datengetrieben
-- "Wissensnetzwerk X ist *interessant*." — Interessantheit ist nicht messbar
-
-Findings unterscheiden konsequent zwischen Befund (datengestützt), Diagnose (datengestützte Auffälligkeit, die Pflege nahelegt) und Hypothese (nur in einer Sicht gestützt).
-
-## Reproduzierbarkeit
-
-Random-Seeds werden in `output/data/analyses.json` mitgespeichert. Embedding-Modellname und Version werden mitgespeichert. Vault-Stand wird über einen Git-Hash des Vaults dokumentiert (falls verfügbar) oder über die letzte mtime aller eingelesenen Dateien. Damit ist jede Analyse reproduzierbar, solange Vault und Code-Version vorliegen.
+Nicht zulässig: Wert-Aussagen ("wichtig", "zentral"), Soll-Aussagen ("sollte gepflegt werden"), inhaltliche Aussagen über Dokumente, Kausal-Interpretationen.
 
 ## Privacy als methodische Frage
 
-Privacy ist nicht nur ethische Pflicht, sondern methodisch relevant. Anonymisierte Knoten verändern den Linkgraph (Knotentitel wird unkenntlich, aber Knoten existiert weiter). Entfernte Volltexte verändern die semantische Sicht (keine Embeddings für Business/Angebote-Knoten).
+Privacy-Filter verändern, was das Tool sehen kann. Business-Knoten (`Business/Angebote/`) werden in der semantischen Sicht ausgeschlossen: Titel wird zu `Angebot-{hash8}`, Body nicht eingelesen. Sensitive Frontmatter-Felder (`invoice`, `summary`) werden gestrippt.
 
-Konsequenz: Anonymisierte Knoten erscheinen in topologischer Sicht, aber nicht in semantischer Sicht. Ihre Triangulation kann nur 2/3 Sichten erreichen. Das wird in den Findings explizit ausgewiesen, nicht versteckt.
+Methodische Konsequenz: anonymisierte Knoten erscheinen in maximal 2 der 3 Sichten und werden mit `[2/3 — Privacy]` annotiert. Konvergenz aus Topologie und Pragmatik genügt für Identifikation, mit dieser einschränkenden Annotation.
 
-## Was dieses Tool nicht leistet
+Privacy darf nicht zu Glättung führen. Methodisch korrekte Befunde werden ausgegeben, auch wenn unbequem.
 
-- **Keine Wertung.** Wir messen Vernetzung, Reife, Kohärenz. Wir bewerten nicht *gut* oder *schlecht*.
-- **Keine Empfehlung.** Pflege-Diagnosen sind datengetriebene Auffälligkeiten, keine Handlungsanweisungen.
-- **Keine Generierung.** Wir schreiben keine neuen Wissensdokumente, sondern analysieren bestehende.
-- **Keine semantische Tiefe.** Embeddings erfassen Oberfläche; das Tool versucht nicht, "Bedeutung" zu rekonstruieren.
+## Stille
+
+Drei Fälle, in denen das Tool keine Interpretation versucht:
+
+- Cluster mit weniger als 5 Knoten: als Mikro-Cluster aufgelistet, nicht als Wissensnetzwerk
+- Paarweise AMI unter 0.15: als "keine substantielle Konvergenz" markiert
+- Anonymisierungs-Anteil über 30% in einem Cluster: als "semantisch nicht ausreichend stützbar" markiert
+
+Stille ist eine valide Tool-Aussage.
+
+## Reproduzierbarkeit
+
+In `output/data/analyses.json` werden pro Lauf mitgespeichert: Random-Seeds (Louvain, HDBSCAN), Bibliotheks-Versionen, Embedding-Modellname und Modellgewicht-Hash, Vault-Stand (Anzahl Dateien, letzte mtime, optional Git-Hash), alle Schwellwerte. Jede Aussage ist damit auf eine konkrete Konfiguration rückführbar.
+
+## Anti-Fallstricke
+
+**Parameter-Anpassung.** Defaults sind im Code dokumentiert und werden nicht zur Glättung verändert. Parameter-Variation ist Forschung, nicht Findings.
+
+**Triangulation ist nicht Mehrheit.** Was zählt, ist die paarweise Konvergenz zwischen unabhängigen Methoden, nicht die Stimmenzahl. Tags und MOCs sind beide Selbst-Deklarationen und nicht methodisch unabhängig.
+
+**Tool gegen Selbstwahrnehmung.** Konvergenz mit der Selbstwahrnehmung des Vault-Eigentümers ist Bestätigung, Divergenz ist eigener Befund. Reflexion statt Schwellwert-Anpassung.
+
+## Was das Tool nicht leistet
+
+Keine Wertung. Keine Handlungsempfehlung. Keine inhaltliche Aussage über Dokumente. Keine Kausal-Erklärung. Keine Generierung neuer Vault-Dokumente außerhalb der Synthese-Datei.
 
 ## Quellen
 
-Newman, M. E. J. (2006). *Modularity and community structure in networks.* PNAS 103(23).
+Denzin, N. K. (1978). *The Research Act.* McGraw-Hill.
 
-Blondel, V. D. et al. (2008). *Fast unfolding of communities in large networks.* Journal of Statistical Mechanics.
+Newman, M. E. J. (2006). Modularity and community structure in networks. *PNAS* 103(23).
 
-Denzin, N. K. (1978). *The research act: A theoretical introduction to sociological methods.* McGraw-Hill.
+Blondel, V. D. et al. (2008). Fast unfolding of communities in large networks. *J. Stat. Mech.*
 
-Reimers, N. & Gurevych, I. (2019). *Sentence-BERT: Sentence Embeddings using Siamese BERT-Networks.* EMNLP.
+Traag, V. A., Waltman, L., van Eck, N. J. (2019). From Louvain to Leiden. *Scientific Reports* 9.
 
-McInnes, L. et al. (2017). *hdbscan: Hierarchical density based clustering.* JOSS.
+Reimers, N., Gurevych, I. (2019). Sentence-BERT. *EMNLP*.
 
-Borgman, C. L. (2015). *Big Data, Little Data, No Data: Scholarship in the Networked World.* MIT Press. [für die epistemologische Rahmung]
+McInnes, L. et al. (2017). hdbscan: Hierarchical density based clustering. *JOSS*.
+
+Vinh, N. X., Epps, J., Bailey, J. (2010). Information theoretic measures for clusterings comparison. *JMLR* 11.
+
+Munafò, M. R. et al. (2017). A manifesto for reproducible science. *Nature Human Behaviour* 1.
