@@ -1,43 +1,12 @@
-# vault-graph
+# vault-graph (MVP)
 
-Methodisch begründete Analyse und Visualisierung der Wissensnetzwerke in einem Obsidian-Vault. Triangulation aus drei Sichten: Topologie (Linkgraph), Semantik (Embeddings), Pragmatik (MOCs, Tags, Frontmatter).
-
-## Frage
-
-Welche Wissensnetzwerke existieren in einem Obsidian-Vault, und wie lassen sich diese methodisch belastbar identifizieren?
-
-## Antwort
-
-Ein Wissensnetzwerk gilt als identifiziert, wenn es in mindestens zwei der drei Sichten als kohärenter Cluster mit paarweiser Jaccard-Übereinstimmung von mindestens 0.6 erscheint. Konvergenzen sind Befund, Divergenzen sind Diagnose.
+Topologische Analyse und Visualisierung eines Obsidian-Vaults. Linkgraph aus Wikilinks, Louvain-Communities, Centrality-Suite, Brückenknoten, K-Core-Dekomposition. Eine selfcontained HTML-Visualisierung.
 
 Methodische Position in [METHODIK.md](METHODIK.md). Operativer Plan in [knowledge/projektkonzept.md](knowledge/projektkonzept.md).
 
-## Architektur
+## MVP-Scope
 
-Vier Phasen, je ein Modul in `vault_graph/`:
-
-1. **Parse** — Vault einlesen, Linkgraph und Texte extrahieren, Privacy-Filter inline
-2. **Analyze** — drei Sichten parallel: Topology, Semantics, Pragmatics
-3. **Triangulate** — Konvergenz und Divergenz, Wissensnetzwerk-Identifikation
-4. **Render** — zwei HTML-Visualisierungen, vier Markdown-Findings, ein Synthese-Dokument im Vault
-
-## Output
-
-Im `output/`-Verzeichnis (nicht versioniert):
-
-- `data/graph.json` — Linkgraph mit Frontmatter
-- `data/embeddings.npy` — Knoten-Embeddings
-- `data/analyses.json` — Centrality, Cluster, Triangulationsmaße, Reproduzierbarkeits-Metadaten
-- `findings/wissensnetzwerke.md` — getriangulierte Befunde
-- `findings/querkonzepte.md` — datengetriebene Brückenknoten
-- `findings/pflegeschulden.md` — operative Hinweise
-- `findings/divergenzen.md` — Divergenz-Diagnosen
-- `visualisierung/kontrast_map.html` — Hauptvisualisierung
-- `visualisierung/triangulation.html` — Wissensnetzwerk-Karte
-
-## Privacy
-
-Strikt by default. Business-Knoten werden anonymisiert (`Angebot-{hash8}`), sensitive Frontmatter-Felder gestrippt, Volltexte aus `Business/Angebote/` nicht in Embeddings einbezogen. Methodische Konsequenzen in [METHODIK.md](METHODIK.md).
+Der MVP arbeitet nur auf der topologischen Sicht. Semantische und pragmatische Sicht plus Triangulation sind als Stage 2 dokumentiert. Der MVP macht damit **keine Aussage über Wissensnetzwerke im vollen Sinn**, sondern liefert topologische Befunde, die Stage 2 stützen oder widerlegen kann.
 
 ## Ausführung
 
@@ -46,8 +15,40 @@ pip install -r requirements.txt
 python -m vault_graph
 ```
 
-Konfiguration als Konstanten in `vault_graph/__main__.py` (Vault-Pfad, Schwellwerte, Privacy-Default).
+Konfiguration als Konstanten in `vault_graph/__main__.py` (Vault-Pfad, Schwellwerte, Seeds).
+
+Output:
+
+- `output/data/graph.json`: Linkgraph mit Frontmatter, tote Links, Orphans, Statistiken
+- `output/findings/parse-bericht.md`: deskriptive Parse-Statistiken
+- `output/findings/topology-bericht.md`: Communities, Centrality-Hubs, Brückenknoten, K-Core
+- `output/visualisierung/topology.html`: interaktive Force-Directed-Visualisierung (Browser öffnen)
+
+## Privacy
+
+Strikt by default. Business-Knoten (`Business/Angebote/`) werden mehrlagig anonymisiert:
+
+- Titel zu `Angebot-{hash8}`, Body und sensitive Frontmatter (`invoice`, `summary`, `aliases`) entfernt
+- `key` und `path` im exportierten JSON durch den Anonym-Title ersetzt
+- Wikilinks anderer Knoten, die auf einen anonymisierten Knoten zeigen, werden im body_preview durch den Anonym-Title ersetzt
+
+Topologie (in/out-Degree, Community) bleibt sichtbar. Methodische Konsequenzen in [METHODIK.md](METHODIK.md).
+
+## Tests
+
+```
+python -m pytest tests/
+```
+
+35 Tests, Fokus auf Wikilink-Extraktion, Privacy-Filter (inkl. Cross-References), Alias-Auflösung, nested-archive-Filter, Louvain-Reproduzierbarkeit, Bridge-Detection.
 
 ## Status
 
-Commit 1 — methodisches Fundament und Modul-Gerüst. Implementation der Phasen folgt in den Commits 2 bis 6, jeweils mit Gate-Kontrolle vor dem nächsten Schritt. Detail in [knowledge/projektkonzept.md](knowledge/projektkonzept.md).
+| Phase | Status |
+|---|---|
+| Parse | abgeschlossen |
+| Topology | abgeschlossen |
+| Render (1 HTML) | abgeschlossen |
+| Semantics (Stage 2) | offen |
+| Pragmatics (Stage 2) | offen |
+| Triangulate (Stage 2) | offen |

@@ -4,87 +4,67 @@ Ziele, Architektur und Vorgehen des vault-graph-Tools. Methodische Grundlage in 
 
 ## Frage
 
-Welche Wissensnetzwerke existieren in einem Obsidian-Vault, und wie lassen sich diese methodisch belastbar identifizieren?
+Welche Strukturen lassen sich im Linkgraph eines Obsidian-Vaults methodisch belastbar identifizieren? Im MVP nur topologisch; in Stage 2 dreifach trianguliert.
 
-## Anspruch
+## MVP-Anspruch
 
-Das Tool produziert keine weitere Graph-Visualisierung, sondern eine begründete Aussage darüber, welche Knotengruppen Wissensnetzwerke sind und welche nur topologische Cluster ohne epistemischen Anspruch.
+Der MVP liefert eine topologische Analyse plus eine interaktive HTML-Visualisierung. Er ist ehrlich darin, was er noch *nicht* leistet: keine semantische Sicht, keine Triangulation, keine Aussage über *Wissensnetzwerke* im vollen Sinn.
 
-## Ziele
+## Ziele (MVP)
 
-1. **Identifikation.** Pro Vault-Lauf eine Liste identifizierter Wissensnetzwerke mit Stützungs-Score (1, 2 oder 3 von drei Sichten konvergent), Mitgliederliste und Größenangabe.
-2. **Begründung.** Jede Aussage in den Findings führt auf Daten und Methode zurück. Befund, Diagnose und Hypothese werden konsequent unterschieden und markiert.
-3. **Diagnose.** Divergenzen zwischen den drei Sichten werden als eigenständige Befunde ausgewiesen und liefern operative Hinweise: fehlende Links, veraltete MOCs, emergente Cluster ohne Hub.
+1. **Topologische Befunde.** Communities mit Modularität, Centrality-Hubs, Brückenknoten, K-Core-Schichten. Reproduzierbar mit fixen Seeds.
+2. **Visualisierung.** Ein selfcontained HTML-File, Force-Directed-Graph, Knoten gefärbt nach Community, Größe nach PageRank, Brückenknoten markiert. Search, Zoom, Detail-Panel.
+3. **Privacy.** Business-Knoten werden mehrlagig anonymisiert. Topologie bleibt sichtbar.
+4. **Methodische Disziplin.** Befund, Diagnose, Hypothese werden unterschieden.
 
-## Architektur
+## Architektur (MVP)
 
-Vier Phasen, jeweils ein Modul in `vault_graph/`.
+Drei Phasen, je ein Modul in `vault_graph/`.
 
-1. **Parse** (`parse.py`): Vault einlesen, Linkgraph und Texte extrahieren, Privacy-Filter inline anwenden
-2. **Analyze**: drei Sichten parallel
-   - `topology.py`: Centrality, Communities, Brückenknoten, K-Core
-   - `semantics.py`: Embeddings, HDBSCAN, Linking-Kandidaten
-   - `pragmatics.py`: MOCs (primär), Tags und Ordner (sekundär), Reifegrad
-3. **Triangulate** (`triangulate.py`): Konvergenz der Sichten, Wissensnetzwerk-Identifikation, Divergenz-Diagnose
-4. **Render** (`render.py`): zwei HTML-Visualisierungen, vier Markdown-Findings, ein Synthese-Dokument im Vault
+1. **Parse** (`parse.py`): Vault einlesen, Linkgraph extrahieren, Privacy-Filter, `graph.json`
+2. **Topology** (`topology.py`): Centrality-Suite, Louvain-Communities, K-Core, Brückenknoten
+3. **Render** (`render.py`): HTML-Visualisierung
 
-Begleitend: `report_parse.py`, `report_topology.py`, etc. erzeugen pro Phase einen deskriptiven Bericht. Diese Berichte sind keine Findings im methodischen Sinn, sondern Sanity-Checks für die Gate-Kontrolle.
+Begleitend: `report_parse.py` und `report_topology.py` erzeugen Markdown-Berichte für die Gate-Kontrolle.
 
-Konfiguration als Konstanten in `vault_graph/__main__.py`: Vault-Pfad, Schwellwerte, Privacy-Default.
-
-## Output
+## Output (MVP)
 
 Im `output/`-Verzeichnis (nicht versioniert):
 
-- `data/graph.json`: Linkgraph mit Frontmatter
-- `data/embeddings.npy`: Knoten-Embeddings
-- `data/analyses.json`: Centrality, Cluster, Triangulationsmaße, Reproduzierbarkeits-Metadaten
-- `findings/wissensnetzwerke.md`: getriangulierte Befunde
-- `findings/querkonzepte.md`: datengetriebene Brückenknoten
-- `findings/pflegeschulden.md`: operative Hinweise
-- `findings/divergenzen.md`: Divergenz-Diagnosen
-- `visualisierung/kontrast_map.html`: Hauptvisualisierung
-- `visualisierung/triangulation.html`: Wissensnetzwerk-Karte
-
-Plus eine Synthese-Datei zurück in den Vault unter `Vault Operations/`.
+- `data/graph.json`: Linkgraph mit Frontmatter, dead_links, orphans, stats
+- `findings/parse-bericht.md`: deskriptive Parse-Statistiken
+- `findings/topology-bericht.md`: Communities, Centrality-Hubs, Brückenknoten, K-Core
+- `visualisierung/topology.html`: interaktive Force-Directed-Visualisierung
 
 ## Vorgehen
 
-Sechs Hauptcommits, jeder einzeln prüfbar. Zwischen-Commits für Tests und Privacy-Härtung sind möglich und werden in dieser Tabelle nicht gepflegt. Vor dem nächsten Hauptcommit jeweils Gate-Kontrolle durch den User.
-
-| Commit | Inhalt | Gate-Kontrolle |
-|---|---|---|
-| C1 | Methodisches Fundament und Modul-Gerüst | Trägt die Methodik epistemisch? |
-| C2 | Parse-Phase implementiert, pytest-Suite, Parse-Bericht | Werden Knoten/Kanten korrekt extrahiert, greift der Privacy-Filter mehrlagig? |
-| C3 | Topology implementiert | Tauchen erwartete Hubs auf, sind Louvain-Cluster plausibel? |
-| C4 | Semantics implementiert | Liegen verwandte Dokumente semantisch zusammen? |
-| C5 | Pragmatics und Triangulate implementiert | Welche Wissensnetzwerke kristallisieren sich heraus? |
-| C6 | Render und Vault-Anbindung implementiert | Trägt die Visualisierung den methodischen Anspruch? |
+Iterative Commits, jeder einzeln prüfbar.
 
 Stand (`git log --oneline`):
 
 ```
+... MVP-Reset und Topology+Render
+ef0b038 Knowledge-Synchronisation mit Stand nach Commit 2
 2761654 Tests und Parse-Bericht
 5b21b8b Parse-Phase implementiert
 af9728a Methodik-Reduktion auf zwei Dokumente
 695343b methodisches Fundament und Modul-Geruest
 ```
 
-## Stage 2
+## Stage 2 (nach MVP)
 
-Nach Abschluss von C6 mögliche Erweiterungen, ohne Vorab-Verpflichtung:
+- Semantische Sicht: `semantics.py` mit Sentence-Embeddings (`all-MiniLM-L6-v2`), HDBSCAN-Cluster, Linking-Kandidaten
+- Pragmatische Sicht: `pragmatics.py` mit MOC-Cluster (primär), Tag- und Ordner-Cluster (sekundär)
+- Triangulation: `triangulate.py` mit AMI-Matrix, paarweise Jaccard ≥ 0.6, vier Divergenz-Typen, Querkonzept-Identifikation
+- Vier zusätzliche Findings-Dokumente (Wissensnetzwerke, Querkonzepte, Pflegeschulden, Divergenzen)
+- Reproduzierbarkeits-Metadaten in `analyses.json` (Tool-Git-Hash, Versionen, Vault-mtime)
 
-- Anker-Ego-Netze: HTML-Subseite pro datengetrieben identifiziertem Querkonzept mit 2-Hop-Nachbarschaft
-- Canvas-Generator: pro Wissensnetzwerk eine Obsidian `.canvas`-Datei zur manuellen Kuration
-- Sensitivitätsanalyse: Schwellwerte systematisch variieren, robuste von schwellwertabhängigen Befunden trennen
-- Zeitreihe: Wachstum und Verschiebung der Wissensnetzwerke über mehrere Läufe
+## Erfolgskriterien (MVP)
 
-## Erfolgskriterien
+1. **Reproduzierbarkeit.** Zweimaliger Lauf gegen denselben Vault-Stand und denselben Seed führt zu identischen Communities und Modularität.
+2. **Plausibilität.** Die Top-Hubs nach PageRank sind erkennbar zentrale Knoten des Vaults. MOCs landen unter den Top-Brückenknoten.
+3. **Bedienbarkeit.** Die HTML-Visualisierung läuft im Browser ohne Server-Setup, Search und Zoom funktionieren.
 
-1. **Reproduzierbarkeit.** Zweimaliger Lauf gegen denselben Vault-Stand und denselben Tool-Git-Hash führt zu identischen Befunden. Tool-Git-Hash, Seeds, Bibliotheks-Versionen, Modellversionen und Vault-Stand werden in jedem Output mitgespeichert; siehe Abschnitt Reproduzierbarkeit in [../METHODIK.md](../METHODIK.md).
-2. **Triangulation greift.** Mindestens ein robust identifiziertes Wissensnetzwerk (3/3 Sichten konvergent) wird gefunden. Andernfalls: Vault zu klein, Methodik falsch parametrisiert oder die Position der drei Sichten zueinander schwächer als angenommen.
-3. **Diagnostische Substanz.** Die Divergenz-Befunde liefern mindestens fünf operativ verwertbare Hinweise. Andernfalls ist das Tool deskriptiv, aber nicht produktiv.
+## Was der MVP nicht leistet
 
-## Was das Tool nicht leistet
-
-Keine Wertung, keine Handlungsempfehlung, keine inhaltliche Aussage über Dokumente, keine Kausal-Erklärung. Begründung in [../METHODIK.md](../METHODIK.md).
+Keine Wertung, keine Handlungsempfehlung, keine inhaltliche Aussage über Dokumente, keine Kausal-Erklärung, keine Triangulation. Begründung in [../METHODIK.md](../METHODIK.md).

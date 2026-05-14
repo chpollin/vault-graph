@@ -1,15 +1,16 @@
-"""CLI-Einstiegspunkt. Orchestriert die vier Phasen.
+"""CLI-Einstiegspunkt fuer den MVP.
 
-Ausfuehrung:
-    python -m vault_graph
-
-Konfiguration als Modul-Konstanten unten.
+Drei Phasen: Parse -> Topology -> Render.
+Ausfuehrung: python -m vault_graph
 """
 
 from pathlib import Path
 
 from vault_graph.parse import parse_vault, write_graph_json
 from vault_graph.report_parse import write_parse_report
+from vault_graph.topology import analyze_topology
+from vault_graph.report_topology import write_topology_report
+from vault_graph.render import render_topology_html
 
 
 # --- Konfiguration -----------------------------------------------------------
@@ -19,23 +20,14 @@ OUTPUT_DIR = Path(__file__).parent.parent / "output"
 
 EXCLUDE_FOLDERS = {"_archive"}
 
-# Privacy-Default: strikt. Siehe METHODIK.md.
 PRIVACY_STRICT = True
 
-# Schwellwerte (Begruendung in METHODIK.md)
-JACCARD_THRESHOLD = 0.6
-BETWEENNESS_ZSCORE_THRESHOLD = 1.5
 LOUVAIN_RESOLUTION = 1.0
 LOUVAIN_RANDOM_SEED = 42
-
-EMBEDDING_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
-
-
-# --- Phasen-Orchestrierung ---------------------------------------------------
+BRIDGE_Z_THRESHOLD = 1.5
 
 
 def main() -> None:
-    """Vier Phasen: Parse -> Analyze (3 Sichten) -> Triangulate -> Render."""
     print(f"vault-graph: parse {VAULT_PATH}")
     graph = parse_vault(
         vault_path=VAULT_PATH,
@@ -46,24 +38,37 @@ def main() -> None:
     graph_json_path = OUTPUT_DIR / "data" / "graph.json"
     write_graph_json(graph, graph_json_path)
 
-    report_path = OUTPUT_DIR / "findings" / "parse-bericht.md"
-    write_parse_report(graph, report_path)
+    parse_report_path = OUTPUT_DIR / "findings" / "parse-bericht.md"
+    write_parse_report(graph, parse_report_path)
 
-    stats = graph.graph.get("dead_links", []), graph.graph.get("orphans", [])
-    print(f"  nodes:      {graph.number_of_nodes()}")
-    print(f"  edges:      {graph.number_of_edges()}")
-    print(f"  dead_links: {len(stats[0])}")
-    print(f"  orphans:    {len(stats[1])}")
-    n_anon = sum(
-        1 for _, a in graph.nodes(data=True) if a.get("privacy_anonymized")
-    )
-    n_mocs = sum(1 for _, a in graph.nodes(data=True) if a.get("is_moc"))
-    print(f"  anonymized: {n_anon}")
-    print(f"  mocs:       {n_mocs}")
+    print(f"  nodes={graph.number_of_nodes()}"
+          f" edges={graph.number_of_edges()}"
+          f" dead_links={len(graph.graph.get('dead_links', []))}"
+          f" orphans={len(graph.graph.get('orphans', []))}")
     print(f"  -> {graph_json_path}")
-    print(f"  -> {report_path}")
+    print(f"  -> {parse_report_path}")
 
-    print("vault-graph: analyze/triangulate/render — Commits 3-6")
+    print(f"vault-graph: topology (louvain resolution={LOUVAIN_RESOLUTION},"
+          f" seed={LOUVAIN_RANDOM_SEED})")
+    topology = analyze_topology(
+        graph,
+        louvain_resolution=LOUVAIN_RESOLUTION,
+        louvain_seed=LOUVAIN_RANDOM_SEED,
+        bridge_z_threshold=BRIDGE_Z_THRESHOLD,
+    )
+    topology_report_path = OUTPUT_DIR / "findings" / "topology-bericht.md"
+    write_topology_report(graph, topology, topology_report_path)
+
+    print(f"  communities={topology['stats']['n_communities']}"
+          f" modularity={topology['modularity']:.3f}"
+          f" bridges={topology['stats']['n_bridges']}"
+          f" max_k_core={topology['stats']['max_k_core']}")
+    print(f"  -> {topology_report_path}")
+
+    print("vault-graph: render")
+    html_path = OUTPUT_DIR / "visualisierung" / "topology.html"
+    render_topology_html(graph, topology, html_path)
+    print(f"  -> {html_path}")
 
 
 if __name__ == "__main__":

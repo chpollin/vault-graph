@@ -180,15 +180,19 @@ def write_graph_json(graph: nx.DiGraph, output_path: Path) -> None:
 
 
 def _walk_vault(vault_path: Path, exclude: set[str]) -> list[Path]:
-    """Sammelt alle .md-Dateien, ohne ausgeschlossene Top-Level-Ordner und
-    versteckte Verzeichnisse (.obsidian, .git, .trash)."""
+    """Sammelt alle .md-Dateien.
+
+    Ausgeschlossen:
+    - versteckte Verzeichnisse (.obsidian, .git, .trash)
+    - jedes Pfadsegment, das in `exclude` steht (z.B. _archive auch nested)
+    """
     files = []
     for path in vault_path.rglob("*.md"):
         rel = path.relative_to(vault_path)
         parts = rel.parts
         if any(p.startswith(".") for p in parts):
             continue
-        if parts[0] in exclude:
+        if any(p in exclude for p in parts):
             continue
         files.append(path)
     return sorted(files)

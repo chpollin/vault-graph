@@ -23,6 +23,40 @@ from vault_graph.parse import (
 )
 
 
+# --- Vault-Walk -------------------------------------------------------------
+
+
+class TestVaultWalk:
+    def test_nested_archive_excluded(self, tmp_path: Path):
+        """_archive auch in tieferen Pfaden filtern, nicht nur top-level."""
+        (tmp_path / "Projects" / "Foo" / "_archive").mkdir(parents=True)
+        (tmp_path / "Projects" / "Foo" / "_archive" / "alt.md").write_text(
+            "---\ntype: knowledge\n---\n# alt\n", encoding="utf-8"
+        )
+        (tmp_path / "Projects" / "Foo" / "aktiv.md").write_text(
+            "---\ntype: knowledge\n---\n# aktiv\n", encoding="utf-8"
+        )
+        graph = parse_vault(
+            tmp_path, exclude={"_archive"}, privacy_strict=False
+        )
+        assert graph.has_node("aktiv")
+        assert not graph.has_node("alt")
+
+    def test_top_level_archive_excluded(self, tmp_path: Path):
+        (tmp_path / "_archive").mkdir()
+        (tmp_path / "_archive" / "veraltet.md").write_text(
+            "---\ntype: knowledge\n---\n# veraltet\n", encoding="utf-8"
+        )
+        (tmp_path / "aktuell.md").write_text(
+            "---\ntype: knowledge\n---\n# aktuell\n", encoding="utf-8"
+        )
+        graph = parse_vault(
+            tmp_path, exclude={"_archive"}, privacy_strict=False
+        )
+        assert graph.has_node("aktuell")
+        assert not graph.has_node("veraltet")
+
+
 # --- Wikilink-Extraktion ----------------------------------------------------
 
 
