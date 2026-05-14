@@ -14,9 +14,19 @@ Drei methodisch unabhängige Antworten, von denen keine allein hinreicht.
 |---|---|---|---|
 | Topologisch | Wikilinks | Louvain | Wikilinks materialisieren epistemische Nähe |
 | Semantisch | Body-Text (Titel + erste 500 Zeichen) | HDBSCAN auf Sentence-Embeddings | Sprache markiert epistemische Zugehörigkeit |
-| Pragmatisch | MOC-Mitgliedschaft, Tags, Ordner | Mengenoperationen | Hubs materialisieren intentionale Strukturierung |
+| Pragmatisch | MOC-Mitgliedschaft (primär), Tags und Ordner (sekundär) | Mengenoperationen | Hubs materialisieren intentionale Strukturierung |
 
 Topologie kennt die Sprache nicht, Semantik kennt die Links nicht, Pragmatik kennt beides nicht direkt. Übereinstimmung zwischen unabhängigen Verfahren ist epistemisch stärker als ein einzelner Befund (Denzin 1978).
+
+### Differenzierung innerhalb der Pragmatik
+
+Die drei pragmatischen Datenquellen sind nicht gleichwertig.
+
+- **MOC-Mitgliedschaft** ist der primäre Marker, weil MOCs aktiv kuratiert werden. Ein Knoten, der in einem MOC steht, wurde dort bewusst platziert.
+- **Tag-Gruppen** sind sekundär, weil Tags im Schreibmoment gesetzt werden, oft ohne Distanz zur Gesamtstruktur.
+- **Ordnerstruktur** ist tertiär. Ordner sind Ablagelogik, nicht Wissenslogik. Gemeinsame Ordnerzugehörigkeit allein konstituiert kein pragmatisches Cluster.
+
+In `pragmatics.py` (Commit 5) werden die drei Quellen getrennt clusterisiert. Ein pragmatisches Cluster gilt nur dann als kohärent, wenn MOC-Mitgliedschaft beteiligt ist; reine Ordner-Cluster werden als Hypothese markiert.
 
 ## Definition
 
@@ -62,7 +72,7 @@ Jede Aussage in den Findings ist genau einer Klasse zugeordnet.
 
 **Befund.** Datengestützt, prüfbar. Beispiel: "Cluster 7 enthält 47 Knoten." Wer den Code mit denselben Daten erneut laufen lässt, kommt zur selben Aussage.
 
-**Diagnose.** Datengestützte Auffälligkeit, die Pflege nahelegt. Beispiel: "Knoten A hat semantische Nähe ≥ 0.8 zu B, ist aber nicht verlinkt — möglicher fehlender Link." Anlass, keine Anweisung.
+**Diagnose.** Datengestützte Auffälligkeit, die Pflege nahelegt. Beispiel: "Knoten A hat semantische Nähe ≥ 0.8 zu B, ist aber nicht verlinkt." Anlass, keine Anweisung.
 
 **Hypothese.** Nur eine Sicht gestützt. Mit `[HYPOTHESE]` markiert.
 
@@ -70,9 +80,21 @@ Nicht zulässig: Wert-Aussagen ("wichtig", "zentral"), Soll-Aussagen ("sollte ge
 
 ## Privacy als methodische Frage
 
-Privacy-Filter verändern, was das Tool sehen kann. Business-Knoten (`Business/Angebote/`) werden in der semantischen Sicht ausgeschlossen: Titel wird zu `Angebot-{hash8}`, Body nicht eingelesen. Sensitive Frontmatter-Felder (`invoice`, `summary`) werden gestrippt.
+Privacy-Filter verändern, was das Tool sehen kann. Business-Knoten (`Business/Angebote/`) werden in der semantischen Sicht ausgeschlossen. Der Filter wirkt mehrlagig.
 
-Methodische Konsequenz: anonymisierte Knoten erscheinen in maximal 2 der 3 Sichten und werden mit `[2/3 — Privacy]` annotiert. Konvergenz aus Topologie und Pragmatik genügt für Identifikation, mit dieser einschränkenden Annotation.
+**Am anonymisierten Knoten selbst:**
+
+- Titel wird zu `Angebot-{hash8}`, der ursprüngliche Dateiname erscheint nicht im exportierten JSON
+- Body wird nicht eingelesen, `body_preview` ist leer
+- Sensitive Frontmatter-Felder werden gestrippt: `invoice`, `summary`, `aliases`
+- Auch der `key` und `path` werden im exportierten JSON durch den Anonym-Title ersetzt
+
+**An anderen Knoten:**
+
+- Wikilinks, die auf einen anonymisierten Knoten zeigen, werden in deren `body_preview` durch den Anonym-Title ersetzt
+- Die Topologie (Wikilinks rein und raus) des anonymisierten Knotens bleibt sichtbar
+
+Methodische Konsequenz: anonymisierte Knoten erscheinen in maximal 2 der 3 Sichten und werden mit `[2/3 Privacy]` annotiert. Konvergenz aus Topologie und Pragmatik genügt für Identifikation, mit dieser einschränkenden Annotation.
 
 Privacy darf nicht zu Glättung führen. Methodisch korrekte Befunde werden ausgegeben, auch wenn unbequem.
 
@@ -88,7 +110,16 @@ Stille ist eine valide Tool-Aussage.
 
 ## Reproduzierbarkeit
 
-In `output/data/analyses.json` werden pro Lauf mitgespeichert: Random-Seeds (Louvain, HDBSCAN), Bibliotheks-Versionen, Embedding-Modellname und Modellgewicht-Hash, Vault-Stand (Anzahl Dateien, letzte mtime, optional Git-Hash), alle Schwellwerte. Jede Aussage ist damit auf eine konkrete Konfiguration rückführbar.
+In `output/data/analyses.json` (ab Commit 5) und `output/data/graph.json` werden pro Lauf mitgespeichert:
+
+- Git-Hash des vault-graph-Tools (zwingend, nicht optional)
+- Random-Seeds (Louvain, HDBSCAN)
+- Bibliotheks-Versionen (networkx, python-frontmatter, hdbscan, sentence-transformers)
+- Embedding-Modellname und Modellgewicht-Hash
+- Vault-Stand: Anzahl Dateien, höchste mtime aller Dateien, optionaler Vault-Git-Hash falls der Vault selbst versioniert ist
+- Alle Schwellwerte mit aktuellen Werten
+
+Reproduzierbarkeit ist Erfolgskriterium und keine Option. Ohne Tool-Git-Hash lässt sich ein Befund nicht auf eine Code-Version zurückführen. Wer das Tool aus einem dirty working tree (uncommitted changes) startet, bekommt einen Vermerk `dirty=true` im Metadatensatz; die Aussagen aus diesem Lauf sind nicht reproduzierbar.
 
 ## Anti-Fallstricke
 

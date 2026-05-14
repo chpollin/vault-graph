@@ -20,13 +20,15 @@ Das Tool produziert keine weitere Graph-Visualisierung, sondern eine begründete
 
 Vier Phasen, jeweils ein Modul in `vault_graph/`.
 
-1. **Parse** (`parse.py`) — Vault einlesen, Linkgraph und Texte extrahieren, Privacy-Filter inline anwenden
-2. **Analyze** — drei Sichten parallel:
-   - `topology.py` — Centrality, Communities, Brückenknoten, K-Core
-   - `semantics.py` — Embeddings, HDBSCAN, Linking-Kandidaten
-   - `pragmatics.py` — MOCs, Tags, Ordner, Reifegrad
-3. **Triangulate** (`triangulate.py`) — Konvergenz der Sichten, Wissensnetzwerk-Identifikation, Divergenz-Diagnose
-4. **Render** (`render.py`) — zwei HTML-Visualisierungen, vier Markdown-Findings, ein Synthese-Dokument im Vault
+1. **Parse** (`parse.py`): Vault einlesen, Linkgraph und Texte extrahieren, Privacy-Filter inline anwenden
+2. **Analyze**: drei Sichten parallel
+   - `topology.py`: Centrality, Communities, Brückenknoten, K-Core
+   - `semantics.py`: Embeddings, HDBSCAN, Linking-Kandidaten
+   - `pragmatics.py`: MOCs (primär), Tags und Ordner (sekundär), Reifegrad
+3. **Triangulate** (`triangulate.py`): Konvergenz der Sichten, Wissensnetzwerk-Identifikation, Divergenz-Diagnose
+4. **Render** (`render.py`): zwei HTML-Visualisierungen, vier Markdown-Findings, ein Synthese-Dokument im Vault
+
+Begleitend: `report_parse.py`, `report_topology.py`, etc. erzeugen pro Phase einen deskriptiven Bericht. Diese Berichte sind keine Findings im methodischen Sinn, sondern Sanity-Checks für die Gate-Kontrolle.
 
 Konfiguration als Konstanten in `vault_graph/__main__.py`: Vault-Pfad, Schwellwerte, Privacy-Default.
 
@@ -34,30 +36,39 @@ Konfiguration als Konstanten in `vault_graph/__main__.py`: Vault-Pfad, Schwellwe
 
 Im `output/`-Verzeichnis (nicht versioniert):
 
-- `data/graph.json` — Linkgraph mit Frontmatter
-- `data/embeddings.npy` — Knoten-Embeddings
-- `data/analyses.json` — Centrality, Cluster, Triangulationsmaße, Reproduzierbarkeits-Metadaten
-- `findings/wissensnetzwerke.md` — getriangulierte Befunde
-- `findings/querkonzepte.md` — datengetriebene Brückenknoten
-- `findings/pflegeschulden.md` — operative Hinweise
-- `findings/divergenzen.md` — Divergenz-Diagnosen
-- `visualisierung/kontrast_map.html` — Hauptvisualisierung
-- `visualisierung/triangulation.html` — Wissensnetzwerk-Karte
+- `data/graph.json`: Linkgraph mit Frontmatter
+- `data/embeddings.npy`: Knoten-Embeddings
+- `data/analyses.json`: Centrality, Cluster, Triangulationsmaße, Reproduzierbarkeits-Metadaten
+- `findings/wissensnetzwerke.md`: getriangulierte Befunde
+- `findings/querkonzepte.md`: datengetriebene Brückenknoten
+- `findings/pflegeschulden.md`: operative Hinweise
+- `findings/divergenzen.md`: Divergenz-Diagnosen
+- `visualisierung/kontrast_map.html`: Hauptvisualisierung
+- `visualisierung/triangulation.html`: Wissensnetzwerk-Karte
 
 Plus eine Synthese-Datei zurück in den Vault unter `Vault Operations/`.
 
 ## Vorgehen
 
-Sechs Commits, jeder einzeln prüfbar. Vor dem nächsten Commit jeweils Gate-Kontrolle durch den User.
+Sechs Hauptcommits, jeder einzeln prüfbar. Zwischen-Commits für Tests und Privacy-Härtung sind möglich und werden in dieser Tabelle nicht gepflegt. Vor dem nächsten Hauptcommit jeweils Gate-Kontrolle durch den User.
 
 | Commit | Inhalt | Gate-Kontrolle |
 |---|---|---|
 | C1 | Methodisches Fundament und Modul-Gerüst | Trägt die Methodik epistemisch? |
-| C2 | Parse-Phase implementiert | Werden Knoten/Kanten korrekt extrahiert, Privacy-Filter wirksam? |
+| C2 | Parse-Phase implementiert, pytest-Suite, Parse-Bericht | Werden Knoten/Kanten korrekt extrahiert, greift der Privacy-Filter mehrlagig? |
 | C3 | Topology implementiert | Tauchen erwartete Hubs auf, sind Louvain-Cluster plausibel? |
 | C4 | Semantics implementiert | Liegen verwandte Dokumente semantisch zusammen? |
 | C5 | Pragmatics und Triangulate implementiert | Welche Wissensnetzwerke kristallisieren sich heraus? |
 | C6 | Render und Vault-Anbindung implementiert | Trägt die Visualisierung den methodischen Anspruch? |
+
+Stand (`git log --oneline`):
+
+```
+2761654 Tests und Parse-Bericht
+5b21b8b Parse-Phase implementiert
+af9728a Methodik-Reduktion auf zwei Dokumente
+695343b methodisches Fundament und Modul-Geruest
+```
 
 ## Stage 2
 
@@ -70,7 +81,7 @@ Nach Abschluss von C6 mögliche Erweiterungen, ohne Vorab-Verpflichtung:
 
 ## Erfolgskriterien
 
-1. **Reproduzierbarkeit.** Zweimaliger Lauf gegen denselben Vault-Stand führt zu identischen Befunden. Seeds, Modellversionen und Vault-Stand in `output/data/analyses.json`.
+1. **Reproduzierbarkeit.** Zweimaliger Lauf gegen denselben Vault-Stand und denselben Tool-Git-Hash führt zu identischen Befunden. Tool-Git-Hash, Seeds, Bibliotheks-Versionen, Modellversionen und Vault-Stand werden in jedem Output mitgespeichert; siehe Abschnitt Reproduzierbarkeit in [../METHODIK.md](../METHODIK.md).
 2. **Triangulation greift.** Mindestens ein robust identifiziertes Wissensnetzwerk (3/3 Sichten konvergent) wird gefunden. Andernfalls: Vault zu klein, Methodik falsch parametrisiert oder die Position der drei Sichten zueinander schwächer als angenommen.
 3. **Diagnostische Substanz.** Die Divergenz-Befunde liefern mindestens fünf operativ verwertbare Hinweise. Andernfalls ist das Tool deskriptiv, aber nicht produktiv.
 
