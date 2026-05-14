@@ -9,6 +9,7 @@ Konfiguration als Modul-Konstanten unten.
 from pathlib import Path
 
 from vault_graph.parse import parse_vault, write_graph_json
+from vault_graph.report_parse import write_parse_report
 
 
 # --- Konfiguration -----------------------------------------------------------
@@ -45,6 +46,9 @@ def main() -> None:
     graph_json_path = OUTPUT_DIR / "data" / "graph.json"
     write_graph_json(graph, graph_json_path)
 
+    report_path = OUTPUT_DIR / "findings" / "parse-bericht.md"
+    write_parse_report(graph, report_path)
+
     stats = graph.graph.get("dead_links", []), graph.graph.get("orphans", [])
     print(f"  nodes:      {graph.number_of_nodes()}")
     print(f"  edges:      {graph.number_of_edges()}")
@@ -57,6 +61,7 @@ def main() -> None:
     print(f"  anonymized: {n_anon}")
     print(f"  mocs:       {n_mocs}")
     print(f"  -> {graph_json_path}")
+    print(f"  -> {report_path}")
 
     print("vault-graph: analyze/triangulate/render — Commits 3-6")
 

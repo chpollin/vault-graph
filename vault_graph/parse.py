@@ -31,7 +31,7 @@ CODE_FENCE_PATTERN = re.compile(r"```.*?```", re.DOTALL)
 INLINE_CODE_PATTERN = re.compile(r"`[^`\n]+`")
 
 PRIVACY_BUSINESS_PREFIX = "Business/Angebote"
-PRIVACY_STRIPPED_FIELDS = {"invoice", "summary"}
+PRIVACY_STRIPPED_FIELDS = {"invoice", "summary", "aliases", "alias"}
 BODY_PREVIEW_CHARS = 500
 
 
@@ -87,6 +87,8 @@ def parse_vault(
                 continue
             graph.add_edge(node["key"], resolved)
 
+    _scrub_anonymized_references_in_previews(graph)
+
     orphans = [
         n for n in graph.nodes
         if graph.in_degree(n) == 0 and graph.out_degree(n) == 0
@@ -132,11 +134,19 @@ def write_graph_json(graph: nx.DiGraph, output_path: Path) -> None:
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
     nodes = []
+    key_remap = {}
     for key, attrs in graph.nodes(data=True):
+        if attrs.get("privacy_anonymized"):
+            export_key = attrs.get("title", key)
+            export_path = f"Business/Angebote/{export_key}.md"
+        else:
+            export_key = key
+            export_path = attrs.get("path", "")
+        key_remap[key] = export_key
         nodes.append({
-            "key": key,
+            "key": export_key,
             "title": attrs.get("title", key),
-            "path": attrs.get("path", ""),
+            "path": export_path,
             "frontmatter": attrs.get("frontmatter", {}),
             "body_preview": attrs.get("body_preview", ""),
             "aliases": attrs.get("aliases", []),
@@ -144,15 +154,21 @@ def write_graph_json(graph: nx.DiGraph, output_path: Path) -> None:
             "is_moc": attrs.get("is_moc", False),
         })
 
-    edges = [{"from": u, "to": v} for u, v in graph.edges]
+    edges = [{"from": key_remap[u], "to": key_remap[v]} for u, v in graph.edges]
+
+    dead_links = [
+        {"from": key_remap.get(d["from"], d["from"]), "to": d["to"]}
+        for d in graph.graph.get("dead_links", [])
+    ]
+    orphans = [key_remap.get(o, o) for o in graph.graph.get("orphans", [])]
 
     payload = {
         "vault_path": graph.graph.get("vault_path", ""),
         "privacy_strict": graph.graph.get("privacy_strict", True),
         "nodes": nodes,
         "edges": edges,
-        "dead_links": graph.graph.get("dead_links", []),
-        "orphans": graph.graph.get("orphans", []),
+        "dead_links": dead_links,
+        "orphans": orphans,
         "stats": _compute_stats(graph),
     }
 
@@ -248,6 +264,41 @@ def _looks_like_moc(key: str, fm: dict[str, Any]) -> bool:
     if "MOC" in key:
         return True
     return False
+
+
+def _scrub_anonymized_references_in_previews(graph: nx.DiGraph) -> None:
+    """Ersetzt in jedem body_preview Wikilinks, die auf anonymisierte Knoten
+    zeigen, durch deren Anonym-Title. Verhindert, dass Business-Knotennamen
+    indirekt via Wikilink-Targets in den Findings oder im JSON erscheinen."""
+    anon_lookup = {
+        attrs.get("title_lookup_original") or n.lower(): attrs.get("title")
+        for n, attrs in graph.nodes(data=True)
+        if attrs.get("privacy_anonymized")
+    }
+    # Erweitere Lookup um die echten Keys (klein) -> anon title
+    anon_by_key = {
+        n.lower(): attrs.get("title")
+        for n, attrs in graph.nodes(data=True)
+        if attrs.get("privacy_anonymized")
+    }
+    if not anon_by_key:
+        return
+
+    def _replace(match: re.Match[str]) -> str:
+        inner = match.group(0)[2:-2]
+        target_raw = inner.split("|", 1)[0].split("#", 1)[0].strip()
+        target = target_raw.rsplit("/", 1)[-1].lower()
+        if target in anon_by_key:
+            return f"[[{anon_by_key[target]}]]"
+        return match.group(0)
+
+    for _, attrs in graph.nodes(data=True):
+        if attrs.get("privacy_anonymized"):
+            continue
+        preview = attrs.get("body_preview") or ""
+        if not preview:
+            continue
+        attrs["body_preview"] = WIKILINK_PATTERN.sub(_replace, preview)
 
 
 def _resolve_target(
