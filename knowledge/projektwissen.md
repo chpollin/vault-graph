@@ -12,7 +12,7 @@ vault-graph parst einen Obsidian-Vault read-only und liefert eine topologische A
 
 ## Methodische Position
 
-Der gegenwaertige Stand arbeitet nur auf der topologischen Sicht, dem Linkgraph aus Wikilinks. Die semantische Sicht (Embeddings) und die pragmatische Sicht (MOCs, Tags, Ordner) sind als Stage 2 dokumentiert, aber nicht implementiert. Damit trifft das Tool bewusst keine Aussage ueber Wissensnetzwerke im vollen Sinn, das braeuchte die Triangulation aus drei Sichten.
+Das Tool arbeitet auf zwei der drei Sichten. Die topologische Sicht ist der Linkgraph aus Wikilinks. Die pragmatische Sicht ist die gelebte Ablage in Top-Level-Ordnern und die Tag-Vergabe, kostenfrei aus den vorhandenen Attributen berechnet. Aus beiden entsteht die erste echte Triangulation, die Kreuzung von topologischer Community und pragmatischer Ordner-Partition. Die semantische Sicht (Embeddings) fehlt noch und ist gegated, weil sie einen kostenpflichtigen Lauf bedeuten kann. Erst mit ihr waere die Triangulation aus drei Sichten vollstaendig.
 
 Drei Aussagetypen werden getrennt. Befund ist datengestuetzt und reproduzierbar gegen denselben Vault-Stand und Tool-Git-Hash. Diagnose ist eine datengestuetzte Pflege-Auffaelligkeit wie tote Links. Hypothese ist schwaecher gestuetzt, etwa ein topologischer Cluster ohne semantische Stuetze. Nicht zulaessig sind Wert-, Soll- und Kausalaussagen. Diese Disziplin ist der Kern und gilt auch fuer jedes Frontend.
 
@@ -24,13 +24,19 @@ Parse (parse.py) liest den Vault ein, extrahiert den Linkgraph samt Frontmatter,
 
 Topology (topology.py) rechnet die Centrality-Suite (Degree in und out, Betweenness, Eigenvector, PageRank, Closeness), Louvain-Communities auf dem ungerichteten Projekt des Graphen (Resolution 1.0, Seed 42), die K-Core-Dekomposition und die Brueckenknoten. Brueckenknoten sind Knoten mit hoher Betweenness bei moderater Degree, operationalisiert als Z-Score-Differenz betweenness_z minus degree_z groesser gleich 1.5, also Kandidaten fuer Querkonzepte.
 
-Render (render.py) erzeugt eine selfcontained HTML mit einem D3-Force-Directed-Graph, Knoten gefaerbt nach Community, Groesse nach PageRank, Bruecken markiert, mit Suche, Zoom, Label-Toggle und Detail-Panel. Explorer (explorer.py) erzeugt darueber hinaus die read-only Werkbank explorer.html, die Topologie und Inhalts-Schicht in einem angereicherten PAYLOAD verbindet (siehe Erste Frontend-Stufe). Begleitend schreiben report_parse.py und report_topology.py die Markdown-Berichte fuer die Gate-Kontrolle.
+Pragmatics (pragmatics.py) erfasst die pragmatische Sicht, die Top-Level-Ordner-Partition und die Tags, und kreuzt sie mit der topologischen Community (siehe Triangulation). Render (render.py) erzeugt eine selfcontained HTML mit einem D3-Force-Directed-Graph, Knoten gefaerbt nach Community, Groesse nach PageRank, Bruecken markiert, mit Suche, Zoom, Label-Toggle und Detail-Panel. Explorer (explorer.py) erzeugt darueber hinaus die read-only Werkbank explorer.html, die Topologie, Inhalts-Schicht und Triangulation in einem angereicherten PAYLOAD verbindet (siehe Erste Frontend-Stufe). Begleitend schreiben report_parse.py, report_topology.py und report_pragmatics.py die Markdown-Berichte fuer die Gate-Kontrolle.
 
 ## Datenarchitektur
 
 Topologie und Inhalt liegen in zwei getrennten Schichten, das ist der Schluessel fuer jedes Frontend. Die Topologie-Schicht steckt im eingebetteten PAYLOAD von topology.html (id, title, path, is_moc, anon, community, pagerank, degree, in_degree, out_degree, betweenness, k_core, is_bridge). Die Inhalts-Schicht steckt in graph.json (key, title, path, vollstaendiges frontmatter inklusive tags und type, body_preview, aliases, privacy_anonymized, is_moc) plus den globalen Strukturen dead_links, orphans und stats.
 
 Beide Schichten sind per Dateiname-Stem joinbar (PAYLOAD.id gleich graph.json key), fuer alle Knoten ausser dem anonymisierten Sonderfall. Ein reiches Read-Frontend mit Community-, Tag- und type-Filter, Orphan- und Bruecken-Hervorhebung und Atom-Sprung ist daraus zur Build-Zeit baubar, ohne die Pipeline neu zu laufen. Das macht eine erste Frontend-Stufe billig.
+
+## Triangulation
+
+Die Triangulation kreuzt die topologische Louvain-Community mit der pragmatischen Ordner-Partition und fragt, ob die aus den Links berechneten Gruppen sich mit der gelebten Ablage decken. Drei Aussagetypen werden getrennt. Befund ist eine Community, die sich weitgehend mit einem Ordner deckt (hohe Reinheit), die Topologie bestaetigt die Ablage. Hypothese ist eine Community, die quer ueber Ordner streut (niedrige Reinheit), ein Kandidat fuer ein Querthema ohne pragmatische Stuetze. Diagnose ist ein einzelner Ausreisser-Knoten, der in einem anderen Ordner liegt als der, der seine sonst reine Community dominiert, also woanders vernetzt als abgelegt.
+
+Gesamtmasse sind die size-gewichtete mittlere Community-Reinheit und die Normalized Mutual Information (NMI) zwischen Community- und Ordner-Partition. NMI ist 1 bei deckungsgleichen, 0 bei unabhaengigen Partitionen. Zusaetzlich misst die Tag-Kohaesion, wie konzentriert die Knoten eines Tags in einer Community liegen, ein konzentrierter Tag ist topologisch geschlossen, ein gestreuter ein Querschnitts-Tag. Privacy bleibt gewahrt, die Ordner-Partition nutzt nur das erste Pfadsegment, nie den Dateinamen, anonymisierte Knoten zaehlen in den Aggregaten mit, werden aber nicht einzeln als Ausreisser gelistet. Reine Mikro-Communities aus wenigen Knoten sind trivial rein und werden im Bericht gesondert ausgewiesen.
 
 ## Privacy
 
@@ -44,9 +50,9 @@ Output liegt in output/ und ist gitignored, also nicht versioniert, aber determi
 
 ## Aktueller Stand
 
-Der MVP (Parse, Topology, Render, Privacy, Tests, fixe Seeds) ist committet und gepusht, HEAD der MVP-Linie ist 4383e93. Ein frischer Lauf gegen den lebenden Vault wurde durchgefuehrt, der Vault ist gegenueber dem alten Snapshot gewachsen und an toten Links und Orphans deutlich sauberer geworden. Die konkreten Zahlen stehen im committeten Pflegesignal-Auszug (findings/pflegesignal-vault-lane.md, Commit 970dcb5) und sind regenerierbar. Stage 2 (semantische und pragmatische Sicht) bleibt dokumentiert und unimplementiert.
+Der MVP (Parse, Topology, Render, Privacy, Tests, fixe Seeds) ist committet und gepusht, HEAD der MVP-Linie ist 4383e93. Ein frischer Lauf gegen den lebenden Vault wurde durchgefuehrt, der Vault ist gegenueber dem alten Snapshot gewachsen und an toten Links und Orphans deutlich sauberer geworden. Die konkreten Zahlen stehen im committeten Pflegesignal-Auszug (findings/pflegesignal-vault-lane.md, Commit 970dcb5) und sind regenerierbar. Von Stage 2 ist die pragmatische Sicht implementiert, die semantische Sicht (Embeddings) bleibt dokumentiert und unimplementiert, weil sie einen kostenpflichtigen Lauf bedeuten kann und gegated ist.
 
-Seit dem MVP sind zwei Schritte hinzugekommen. Der Privacy-Fix ist umgesetzt und gegen den lebenden Vault verifiziert. Die erste Frontend-Stufe ist als Variante A gebaut, ein neues Modul explorer.py erzeugt zusaetzlich zu topology.html eine read-only Werkbank explorer.html, in die Pipeline aufgenommen und mitregeneriert. Beide Outputs bleiben gitignored und deterministisch regenerierbar.
+Seit dem MVP sind drei Schritte hinzugekommen. Der Privacy-Fix ist umgesetzt und gegen den lebenden Vault verifiziert. Die erste Frontend-Stufe ist als Variante A gebaut, ein neues Modul explorer.py erzeugt zusaetzlich zu topology.html eine read-only Werkbank explorer.html. Die pragmatische Sicht und die erste Triangulation sind gebaut, pragmatics.py und report_pragmatics.py kreuzen Community und Ordner und schreiben den triangulation-bericht.md, das Frontend zeigt Ordner, Ausreisser und die Triangulationsmasse. Alles ist in die Pipeline aufgenommen, die Outputs bleiben gitignored und deterministisch regenerierbar, die Testsuite deckt die neue Phase ab.
 
 ## Projektrichtung
 
@@ -80,6 +86,8 @@ Blondel, V. D. et al. (2008). Fast unfolding of communities in large networks. J
 
 Newman, M. E. J. (2006). Modularity and community structure in networks. PNAS 103(23).
 
-Denzin, N. K. (1978). The Research Act. McGraw-Hill. Referenz fuer die Triangulations-Position, ab Stage 2 relevant.
+Danon, L. et al. (2005). Comparing community structure identification. J. Stat. Mech. P09008. Grundlage der Normalized Mutual Information als Partitionsvergleich.
+
+Denzin, N. K. (1978). The Research Act. McGraw-Hill. Referenz fuer die Triangulations-Position, mit der Kreuzung von topologischer und pragmatischer Sicht jetzt einschlaegig.
 
 Munafo, M. R. et al. (2017). A manifesto for reproducible science. Nature Human Behaviour 1.

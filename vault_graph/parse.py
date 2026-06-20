@@ -123,6 +123,17 @@ def extract_wikilinks(text: str) -> list[str]:
     return targets
 
 
+def normalize_tags(fm: dict[str, Any]) -> list[str]:
+    """Frontmatter-Tags zu einer flachen Liste von Strings. tags kann als
+    String oder Liste vorliegen, fehlende Tags ergeben eine leere Liste."""
+    raw = fm.get("tags")
+    if isinstance(raw, str):
+        return [raw]
+    if isinstance(raw, list):
+        return [str(t) for t in raw if t]
+    return []
+
+
 def build_key_remap(graph: nx.DiGraph) -> dict[str, str]:
     """Mappt jeden Graph-Knoten-Key auf seinen exportsicheren Key.
 

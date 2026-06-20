@@ -25,16 +25,17 @@ from typing import Any
 
 import networkx as nx
 
-from vault_graph.parse import build_key_remap, export_path_for
+from vault_graph.parse import build_key_remap, export_path_for, normalize_tags
 
 
 def render_explorer_html(
     graph: nx.DiGraph,
     topology: dict[str, Any],
+    pragmatics: dict[str, Any],
     output_path: Path,
 ) -> None:
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    payload = _build_payload(graph, topology)
+    payload = _build_payload(graph, topology, pragmatics)
     vault_name = Path(graph.graph.get("vault_path", "obsidian")).name or "obsidian"
     html_doc = (
         _TEMPLATE
@@ -44,20 +45,17 @@ def render_explorer_html(
     output_path.write_text(html_doc, encoding="utf-8")
 
 
-def _norm_tags(fm: dict[str, Any]) -> list[str]:
-    raw = fm.get("tags")
-    if isinstance(raw, str):
-        return [raw]
-    if isinstance(raw, list):
-        return [str(t) for t in raw if t]
-    return []
-
-
-def _build_payload(graph: nx.DiGraph, topology: dict[str, Any]) -> dict:
+def _build_payload(
+    graph: nx.DiGraph, topology: dict[str, Any], pragmatics: dict[str, Any]
+) -> dict:
     centralities = topology["centralities"]
     communities = topology["communities"]
     bridges = set(topology["bridges"])
     k_core = topology["k_core"]
+
+    folder_of = pragmatics["folder_of"]
+    community_folder = pragmatics["community_folder"]
+    outlier_keys = {o["key"] for o in pragmatics["outliers"]}
 
     key_remap = build_key_remap(graph)
 
@@ -67,8 +65,10 @@ def _build_payload(graph: nx.DiGraph, topology: dict[str, Any]) -> dict:
         export_key = key_remap[key]
         anon = bool(attrs.get("privacy_anonymized"))
         fm = attrs.get("frontmatter", {}) or {}
+        cid = communities.get(key, -1)
+        cf = community_folder.get(cid, {})
         # Privacy: anonymisierte Knoten geben keine Inhalts-Metadaten aus.
-        tags = [] if anon else _norm_tags(fm)
+        tags = [] if anon else normalize_tags(fm)
         node_type = "" if anon else (str(fm.get("type")) if fm.get("type") else "")
         nodes.append({
             "id": export_key,
@@ -76,7 +76,7 @@ def _build_payload(graph: nx.DiGraph, topology: dict[str, Any]) -> dict:
             "path": export_path_for(key, export_key, attrs),
             "is_moc": bool(attrs.get("is_moc")),
             "anon": anon,
-            "community": communities.get(key, -1),
+            "community": cid,
             "pagerank": round(c.get("pagerank", 0.0), 6),
             "degree": int(c.get("degree", 0)),
             "in_degree": int(c.get("in_degree", 0)),
@@ -86,6 +86,10 @@ def _build_payload(graph: nx.DiGraph, topology: dict[str, Any]) -> dict:
             "is_bridge": key in bridges,
             "tags": tags,
             "type": node_type,
+            "folder": folder_of.get(key, "(Wurzel)"),
+            "outlier": key in outlier_keys,
+            "comm_folder": cf.get("dominant_folder", ""),
+            "comm_purity": round(cf.get("purity", 0.0), 3),
         })
 
     edges = [
@@ -107,6 +111,7 @@ def _build_payload(graph: nx.DiGraph, topology: dict[str, Any]) -> dict:
     ]
 
     stats = topology["stats"]
+    prag_stats = pragmatics["stats"]
     return {
         "nodes": nodes,
         "edges": edges,
@@ -120,6 +125,9 @@ def _build_payload(graph: nx.DiGraph, topology: dict[str, Any]) -> dict:
             "n_bridges": stats["n_bridges"],
             "n_dead_links": len(dead_links),
             "n_orphans": len(orphans),
+            "nmi": round(prag_stats["nmi_community_folder"], 3),
+            "mean_purity": round(prag_stats["mean_community_purity"], 3),
+            "n_outliers": prag_stats["n_outliers"],
         },
     }
 
@@ -165,6 +173,8 @@ _TEMPLATE = r"""<!DOCTYPE html>
   .badge { display:inline-block; font-size:10px; padding:0 5px; border-radius:8px; background:#e3e3e3; color:#555; margin-left:4px; }
   .badge.moc { background:#dfe8d6; color:#3a6b2a; }
   .badge.bridge { background:#222; color:white; }
+  .badge.outlier { background:#b8541d; color:white; }
+  tbody tr.outlier td.folder { background:#fbf0e8; }
   #triage { padding:10px 12px; }
   #triage h3 { font-size:12px; text-transform:uppercase; letter-spacing:.5px; color:var(--muted); margin:14px 0 6px 0; }
   #triage h3:first-child { margin-top:0; }
@@ -209,8 +219,10 @@ _TEMPLATE = r"""<!DOCTYPE html>
       <label>Community <select id="f-comm"></select></label>
       <label>Tag <select id="f-tag"></select></label>
       <label>type <select id="f-type"></select></label>
+      <label>Ordner <select id="f-folder"></select></label>
       <label><input type="checkbox" id="f-bridge"> nur Bruecken</label>
       <label><input type="checkbox" id="f-orphan"> nur Orphans</label>
+      <label><input type="checkbox" id="f-outlier"> nur Ausreisser</label>
       <span class="legend">Befund datengestuetzt &middot; Diagnose Pflege &middot; <b>Hypothese</b> topologisch ohne semantische Stuetze</span>
     </div>
   </header>
@@ -256,7 +268,7 @@ const state = {
   selected: null,
   sortKey: "pagerank",
   sortDir: -1,
-  filter: { q:"", comm:"", tag:"", type:"", bridge:false, orphan:false },
+  filter: { q:"", comm:"", tag:"", type:"", folder:"", bridge:false, orphan:false, outlier:false },
 };
 const orphanSet = new Set(PAYLOAD.orphans);
 
@@ -265,7 +277,8 @@ const s = PAYLOAD.stats;
 document.getElementById("stats").innerHTML =
   `<b>${s.n_nodes}</b> Knoten &middot; <b>${s.n_edges}</b> Kanten &middot; ` +
   `<b>${s.n_communities}</b> Communities &middot; Modularity <b>${s.modularity}</b> &middot; ` +
-  `<b>${s.n_bridges}</b> Bruecken &middot; <b>${s.n_dead_links}</b> tote Links &middot; <b>${s.n_orphans}</b> Orphans`;
+  `<b>${s.n_bridges}</b> Bruecken &middot; <b>${s.n_dead_links}</b> tote Links &middot; <b>${s.n_orphans}</b> Orphans &middot; ` +
+  `NMI <b>${s.nmi}</b> &middot; Reinheit <b>${s.mean_purity}</b> &middot; <b>${s.n_outliers}</b> Ausreisser`;
 
 // --- Facets ---
 function fillSelect(id, values, label) {
@@ -281,11 +294,16 @@ const tagValues = [...tagCounts.keys()].sort((a,b) => tagCounts.get(b)-tagCounts
 fillSelect("f-tag", tagValues, t => `${t} (${tagCounts.get(t)})`);
 const typeValues = [...new Set(NODES.map(n => n.type).filter(Boolean))].sort();
 fillSelect("f-type", typeValues);
+const folderCounts = new Map();
+NODES.forEach(n => folderCounts.set(n.folder, (folderCounts.get(n.folder)||0)+1));
+const folderValues = [...folderCounts.keys()].sort((a,b) => folderCounts.get(b)-folderCounts.get(a) || a.localeCompare(b));
+fillSelect("f-folder", folderValues, f => `${f} (${folderCounts.get(f)})`);
 
 // --- Table ---
 const COLS = [
   { key:"title", label:"Titel", hyp:false, fmt:n => titleCell(n) },
   { key:"type", label:"type", hyp:false, fmt:n => escapeHtml(n.type||"") },
+  { key:"folder", label:"Ordner", hyp:false, fmt:n => folderCell(n) },
   { key:"community", label:"Comm.", hyp:true, num:true, fmt:n => n.community },
   { key:"pagerank", label:"PageRank", hyp:false, num:true, fmt:n => n.pagerank.toFixed(4) },
   { key:"degree", label:"Degree", hyp:false, num:true, fmt:n => `${n.degree}` },
@@ -302,6 +320,12 @@ function titleCell(n) {
   return h;
 }
 
+function folderCell(n) {
+  let h = escapeHtml(n.folder);
+  if (n.outlier) h += '<span class="badge outlier" title="liegt in fremdem Ordner trotz reiner Community">Ausreisser</span>';
+  return h;
+}
+
 document.getElementById("thead-row").innerHTML = COLS.map(c =>
   `<th data-key="${c.key}" class="${c.hyp?'hyp':''}" title="${c.hyp?'Hypothese, topologisch ohne semantische Stuetze':'Befund'}">${c.label} <span class="arrow" data-arrow="${c.key}"></span></th>`
 ).join("");
@@ -312,8 +336,10 @@ function passesFilter(n) {
   if (f.comm !== "" && String(n.community) !== f.comm) return false;
   if (f.tag && !n.tags.includes(f.tag)) return false;
   if (f.type && n.type !== f.type) return false;
+  if (f.folder && n.folder !== f.folder) return false;
   if (f.bridge && !n.is_bridge) return false;
   if (f.orphan && !orphanSet.has(n.id)) return false;
+  if (f.outlier && !n.outlier) return false;
   return true;
 }
 
@@ -329,7 +355,7 @@ function renderTable() {
   });
   const tbody = document.getElementById("tbody");
   tbody.innerHTML = rows.map(n =>
-    `<tr data-id="${escapeAttr(n.id)}" class="${n.anon?'anon':''} ${n.id===state.selected?'sel':''}">` +
+    `<tr data-id="${escapeAttr(n.id)}" class="${n.anon?'anon':''} ${n.outlier?'outlier':''} ${n.id===state.selected?'sel':''}">` +
     COLS.map(c => `<td class="${c.num?'num':''} ${c.key==='title'?'title':''}">${c.fmt(n)}</td>`).join("") +
     `</tr>`
   ).join("");
@@ -400,8 +426,10 @@ bindFilter("f-q", "q", "input", el => el.value.toLowerCase().trim());
 bindFilter("f-comm", "comm", "change", el => el.value);
 bindFilter("f-tag", "tag", "change", el => el.value);
 bindFilter("f-type", "type", "change", el => el.value);
+bindFilter("f-folder", "folder", "change", el => el.value);
 bindFilter("f-bridge", "bridge", "change", el => el.checked);
 bindFilter("f-orphan", "orphan", "change", el => el.checked);
+bindFilter("f-outlier", "outlier", "change", el => el.checked);
 
 // --- Graph (Kontext) ---
 const svg = d3.select("#graph svg");
@@ -472,7 +500,9 @@ function renderDetail(id) {
     <div class="kindline">${escapeHtml(n.path)}</div>
     <dl>
       <dt>type / tags</dt><dd>${escapeHtml(n.type||"-")} ${tagsHtml}</dd>
+      <dt>Ordner</dt><dd>${escapeHtml(n.folder)}${n.outlier?' <span class="badge outlier">Ausreisser</span>':''}</dd>
       <dt>Community <span style="color:#1d6fb8">(Hypothese)</span></dt><dd>${n.community}</dd>
+      <dt>Triangulation <span style="color:#b8541d">(Diagnose)</span></dt><dd>Community-Ordner ${escapeHtml(n.comm_folder||"-")}, Reinheit ${n.comm_purity}${n.outlier?', dieser Knoten liegt im fremden Ordner':''}</dd>
       <dt>PageRank / Betweenness</dt><dd>${n.pagerank.toFixed(4)} / ${n.betweenness.toFixed(4)}</dd>
       <dt>Degree</dt><dd>${n.degree} (in ${n.in_degree}, out ${n.out_degree}), K-Core ${n.k_core}</dd>
       <dt>verweist auf</dt><dd>${nbrLinks(outN)}</dd>

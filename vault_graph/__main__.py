@@ -10,6 +10,8 @@ from vault_graph.parse import parse_vault, write_graph_json
 from vault_graph.report_parse import write_parse_report
 from vault_graph.topology import analyze_topology
 from vault_graph.report_topology import write_topology_report
+from vault_graph.pragmatics import analyze_pragmatics
+from vault_graph.report_pragmatics import write_pragmatics_report
 from vault_graph.render import render_topology_html
 from vault_graph.explorer import render_explorer_html
 
@@ -26,6 +28,11 @@ PRIVACY_STRICT = True
 LOUVAIN_RESOLUTION = 1.0
 LOUVAIN_RANDOM_SEED = 42
 BRIDGE_Z_THRESHOLD = 1.5
+
+PURITY_HIGH = 0.7
+PURITY_LOW = 0.5
+OUTLIER_MIN_PURITY = 0.6
+TAG_MIN_COUNT = 5
 
 
 def main() -> None:
@@ -66,13 +73,31 @@ def main() -> None:
           f" max_k_core={topology['stats']['max_k_core']}")
     print(f"  -> {topology_report_path}")
 
+    print("vault-graph: pragmatics (triangulation community x ordner)")
+    pragmatics = analyze_pragmatics(
+        graph,
+        topology,
+        purity_high=PURITY_HIGH,
+        purity_low=PURITY_LOW,
+        outlier_min_purity=OUTLIER_MIN_PURITY,
+        tag_min_count=TAG_MIN_COUNT,
+    )
+    pragmatics_report_path = OUTPUT_DIR / "findings" / "triangulation-bericht.md"
+    write_pragmatics_report(graph, topology, pragmatics, pragmatics_report_path)
+
+    print(f"  folders={pragmatics['stats']['n_folders']}"
+          f" nmi={pragmatics['stats']['nmi_community_folder']:.3f}"
+          f" mean_purity={pragmatics['stats']['mean_community_purity']:.3f}"
+          f" outliers={pragmatics['stats']['n_outliers']}")
+    print(f"  -> {pragmatics_report_path}")
+
     print("vault-graph: render")
     html_path = OUTPUT_DIR / "visualisierung" / "topology.html"
     render_topology_html(graph, topology, html_path)
     print(f"  -> {html_path}")
 
     explorer_path = OUTPUT_DIR / "visualisierung" / "explorer.html"
-    render_explorer_html(graph, topology, explorer_path)
+    render_explorer_html(graph, topology, pragmatics, explorer_path)
     print(f"  -> {explorer_path}")
 
 
