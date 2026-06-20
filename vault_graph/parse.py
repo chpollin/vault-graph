@@ -123,6 +123,33 @@ def extract_wikilinks(text: str) -> list[str]:
     return targets
 
 
+def build_key_remap(graph: nx.DiGraph) -> dict[str, str]:
+    """Mappt jeden Graph-Knoten-Key auf seinen exportsicheren Key.
+
+    Anonymisierte Business-Knoten werden auf ihren Angebot-Hash-Titel
+    abgebildet, alle anderen auf sich selbst. Dies ist die einzige Stelle, an
+    der die Privacy-Ersetzung der Knoten-Identitaet definiert ist. Jeder
+    Konsument, der Knoten-Keys, Pfade oder Kanten-Endpunkte ausgibt
+    (write_graph_json, render, explorer), muss diese Funktion verwenden, sonst
+    leakt der Klartext-Dateiname eines Business-Knotens in den Output.
+    """
+    remap = {}
+    for key, attrs in graph.nodes(data=True):
+        if attrs.get("privacy_anonymized"):
+            remap[key] = attrs.get("title", key)
+        else:
+            remap[key] = key
+    return remap
+
+
+def export_path_for(key: str, export_key: str, attrs: dict[str, Any]) -> str:
+    """Exportsicherer Pfad eines Knotens. Anonymisierte Knoten bekommen einen
+    synthetischen Pfad aus dem Hash-Titel, alle anderen ihren echten Pfad."""
+    if attrs.get("privacy_anonymized"):
+        return f"Business/Angebote/{export_key}.md"
+    return attrs.get("path", "")
+
+
 def write_graph_json(graph: nx.DiGraph, output_path: Path) -> None:
     """Serialisiert Graph + Statistiken als JSON.
 
@@ -133,16 +160,11 @@ def write_graph_json(graph: nx.DiGraph, output_path: Path) -> None:
     """
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
+    key_remap = build_key_remap(graph)
     nodes = []
-    key_remap = {}
     for key, attrs in graph.nodes(data=True):
-        if attrs.get("privacy_anonymized"):
-            export_key = attrs.get("title", key)
-            export_path = f"Business/Angebote/{export_key}.md"
-        else:
-            export_key = key
-            export_path = attrs.get("path", "")
-        key_remap[key] = export_key
+        export_key = key_remap[key]
+        export_path = export_path_for(key, export_key, attrs)
         nodes.append({
             "key": export_key,
             "title": attrs.get("title", key),

@@ -17,6 +17,8 @@ from typing import Any
 
 import networkx as nx
 
+from vault_graph.parse import build_key_remap, export_path_for
+
 
 def render_topology_html(
     graph: nx.DiGraph,
@@ -35,13 +37,20 @@ def _build_payload(graph: nx.DiGraph, topology: dict[str, Any]) -> dict:
     bridges = set(topology["bridges"])
     k_core = topology["k_core"]
 
+    # Privacy: id, path und die Kanten-Endpunkte muessen ueber denselben Remap
+    # laufen wie write_graph_json, sonst steht der Klartext-Dateiname eines
+    # anonymisierten Business-Knotens in der HTML. Topologie-Masse werden ueber
+    # den Original-Key nachgeschlagen, ausgegeben wird der Remap-Key.
+    key_remap = build_key_remap(graph)
+
     nodes = []
     for key, attrs in graph.nodes(data=True):
         c = centralities.get(key, {})
+        export_key = key_remap[key]
         nodes.append({
-            "id": key,
-            "title": attrs.get("title", key),
-            "path": attrs.get("path", ""),
+            "id": export_key,
+            "title": attrs.get("title", export_key),
+            "path": export_path_for(key, export_key, attrs),
             "is_moc": bool(attrs.get("is_moc")),
             "anon": bool(attrs.get("privacy_anonymized")),
             "community": communities.get(key, -1),
@@ -54,7 +63,9 @@ def _build_payload(graph: nx.DiGraph, topology: dict[str, Any]) -> dict:
             "is_bridge": key in bridges,
         })
 
-    edges = [{"source": u, "target": v} for u, v in graph.edges]
+    edges = [
+        {"source": key_remap[u], "target": key_remap[v]} for u, v in graph.edges
+    ]
     return {"nodes": nodes, "edges": edges}
 
 
