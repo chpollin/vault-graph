@@ -11,6 +11,7 @@ from vault_graph.report_parse import write_parse_report
 from vault_graph.topology import analyze_topology
 from vault_graph.report_topology import write_topology_report
 from vault_graph.render import render_topology_html
+from vault_graph.explorer import render_explorer_html
 
 
 # --- Konfiguration -----------------------------------------------------------
@@ -69,6 +70,10 @@ def main() -> None:
     html_path = OUTPUT_DIR / "visualisierung" / "topology.html"
     render_topology_html(graph, topology, html_path)
     print(f"  -> {html_path}")
+
+    explorer_path = OUTPUT_DIR / "visualisierung" / "explorer.html"
+    render_explorer_html(graph, topology, explorer_path)
+    print(f"  -> {explorer_path}")
 
 
 if __name__ == "__main__":
