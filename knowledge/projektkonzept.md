@@ -45,11 +45,12 @@ Im `output/`-Verzeichnis (nicht versioniert):
 
 Iterative Commits, jeder einzeln pruefbar. Der laufende Verlauf steht in [journal.md](journal.md).
 
-## Offen, die semantische Sicht
+## Offen, die semantische Sicht und der Wissensgraph
 
-Noch nicht gebaut, ausgearbeitet als Entscheidungsvorlage in [aehnlichkeitsanalyse-vorlage.md](aehnlichkeitsanalyse-vorlage.md):
+Die zentrale Richtung ist beschlossen, die Netzwerkvisualisierung wird das zentrale UI-Element und der reine Linkgraph wird zu einem getypten Wissensgraphen. Der ausgearbeitete Plan steht in [plan-zentrale-visualisierung.md](plan-zentrale-visualisierung.md), der Gestaltungsvorschlag fuer den Interface-Umbau in [gestaltungsvorschlag-interface.md](gestaltungsvorschlag-interface.md), die semantische Schicht im Detail in [aehnlichkeitsanalyse-vorlage.md](aehnlichkeitsanalyse-vorlage.md). Noch nicht gebaut sind:
 
-- Semantische Sicht ueber Text-Embeddings, ein lokales mehrsprachiges Modell, Linking-Kandidaten via Kosinusaehnlichkeit
+- Semantische Sicht ueber Text-Embeddings, ein lokales mehrsprachiges Modell, Linking-Kandidaten via Kosinusaehnlichkeit (Schicht eins, Scout)
+- Getypte Relationen ueber eine kleine Taxonomie, vom Sprachmodell vorgeschlagen und vom Menschen bestaetigt (Schicht zwei, Karte)
 - Die semantische Partition als dritte Achse der Triangulation, neben Community und Ordner
 - Ein Diagnose-Bericht latenter Verknuepfungen (aehnliche, aber unverlinkte Notizen)
 - Eine vollstaendige Reproduzierbarkeits-Signatur pro Lauf (Tool-Git-Hash, Versionen, Vault-mtime)
