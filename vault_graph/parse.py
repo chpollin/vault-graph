@@ -291,8 +291,7 @@ def _read_file(
 
 def _looks_like_moc(key: str, fm: dict[str, Any]) -> bool:
     """Heuristik: MOCs erkennen wir an Frontmatter-type 'vault-organisation'
-    oder am 'hub'-Tag oder am Suffix 'MOC' im Dateinamen. In pragmatics.py
-    wird diese Heuristik praezisiert."""
+    oder am 'hub'-Tag oder am Suffix 'MOC' im Dateinamen."""
     if fm.get("type") == "vault-organisation":
         return True
     tags = fm.get("tags") or []

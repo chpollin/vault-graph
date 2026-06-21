@@ -7,6 +7,9 @@ Projektkonzept des Tools. Methodische Grundlage in [../METHODIK.md](../METHODIK.
 - [README.md](README.md): dieser Index
 - [projektkonzept.md](projektkonzept.md): Frage, Ziele, Architektur, Commit-Plan mit Gate-Kontrolle, Erfolgskriterien
 - [projektwissen.md](projektwissen.md): konsolidierter Wissensstand, Datenarchitektur, Frontend-Vorbereitung, Einbettung in die Forschungsleitstelle
+- [journal.md](journal.md): Lane-Journal, Verlauf und Entscheidungs-Provenienz je Runde
+- [variante-b-schreibterritorium.md](variante-b-schreibterritorium.md): Entscheidungsvorlage Variante B, Schreibterritorium gegen die obsidian-vault-Lane
+- [frontend-refactoring-befunde.md](frontend-refactoring-befunde.md): Befunde zu Interface, Refactoring und Doku, Entscheidungsvorlage fuer den naechsten Milestone
 
 ## Lesepfad
 

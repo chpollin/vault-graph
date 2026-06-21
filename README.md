@@ -40,7 +40,7 @@ Topologie (in/out-Degree, Community) bleibt sichtbar. Methodische Konsequenzen i
 python -m pytest tests/
 ```
 
-35 Tests, Fokus auf Wikilink-Extraktion, Privacy-Filter (inkl. Cross-References), Alias-Auflösung, nested-archive-Filter, Louvain-Reproduzierbarkeit, Bridge-Detection.
+44 Tests, Fokus auf Wikilink-Extraktion, Privacy-Filter (inkl. Cross-References), Alias-Auflösung, nested-archive-Filter, Louvain-Reproduzierbarkeit, Bridge-Detection, Triangulation (NMI, Reinheit, Ausreisser).
 
 ## Status
 
