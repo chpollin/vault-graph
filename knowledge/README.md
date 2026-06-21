@@ -11,6 +11,7 @@ Projektkonzept des Tools. Methodische Grundlage in [../METHODIK.md](../METHODIK.
 - [variante-b-schreibterritorium.md](variante-b-schreibterritorium.md): Entscheidungsvorlage Variante B, Schreibterritorium gegen die obsidian-vault-Lane
 - [frontend-refactoring-befunde.md](frontend-refactoring-befunde.md): Befunde zu Interface, Refactoring und Doku, Entscheidungsvorlage fuer den naechsten Milestone
 - [aehnlichkeitsanalyse-vorlage.md](aehnlichkeitsanalyse-vorlage.md): ausgearbeitete Vorlage zur semantischen Aehnlichkeitsanalyse (Funktionsweise, Modell, Kosten, Empfehlung)
+- [plan-zentrale-visualisierung.md](plan-zentrale-visualisierung.md): Konzept und Plan, Netzwerkvisualisierung als zentrales Element und getypter Wissensgraph (Zwei-Schichten-Modell, Relationstaxonomie, Phasen)
 
 ## Lesepfad
 
