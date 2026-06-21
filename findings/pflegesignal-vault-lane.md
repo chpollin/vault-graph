@@ -1,12 +1,14 @@
 # Pflegesignal Vault aus vault-graph
 
-Read-only Diagnose des Vault-Linkgraphen, erzeugt vom Tool vault-graph (Tool-Commit 4383e93) gegen den lebenden Vault am 2026-06-20. Snapshot, deterministisch regenerierbar mit python -m vault_graph. Dies ist ein Pflegesignal fuer die Vault-Lane, kein Auftrag und keine Wertung. Was davon bearbeitet wird, entscheidet die Vault-Lane.
+Read-only Diagnose des Vault-Linkgraphen, erzeugt vom Tool vault-graph (Analysecode unveraendert seit Tool-Commit 2b0e0f8) gegen den lebenden Vault am 2026-06-21. Snapshot, deterministisch regenerierbar mit python -m vault_graph. Dies ist ein Pflegesignal fuer die Vault-Lane, kein Auftrag und keine Wertung. Was davon bearbeitet wird, entscheidet die Vault-Lane.
 
 Methodische Einordnung. Tote Links und Orphans sind Diagnosen, also datengestuetzte Pflege-Auffaelligkeiten, keine Befunde ueber Inhalt und keine Soll-Aussagen. Ein toter Link ist ein Wikilink, dessen Zielnotiz nicht existiert.
 
 ## Globaler Stand
 
-Knoten 713, Kanten 6116, 14 Louvain-Communities, Modularity 0.497, 3 Brueckenknoten, hoechster K-Core 12, MOCs 60, anonymisierte Knoten 4.
+Knoten 718, Kanten 6145, 14 Louvain-Communities, Modularity 0.502, 3 Brueckenknoten, hoechster K-Core 12, MOCs 60, anonymisierte Knoten 4.
+
+Die Tote-Link- und Orphan-Diagnose unten ist gegenueber dem Lauf vom 2026-06-20 stabil (145 tote Links in 53 Quellknoten, identische Top-Quellen, dieselben 4 Orphans). Der Vault ist leicht gewachsen, das Pflegebild der Linkhygiene blieb unveraendert.
 
 ## Tote Links (145)
 
