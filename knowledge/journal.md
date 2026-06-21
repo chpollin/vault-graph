@@ -2,6 +2,10 @@
 
 Gedaechtnis der Lane fuer den Wiedereinstieg ohne Gespraechskontext. Knapp, je Runde ein Eintrag, neueste oben. Der kanonische Wissensstand bleibt projektwissen.md, das Journal haelt nur den Verlauf und die Entscheidungs-Provenienz.
 
+## 2026-06-21, Analyse-Session, UI-Kritik und Milestone-Vorbereitung
+
+Auf Operator-Wunsch eine konstruktiv-kritische UI-Analyse, eine Refactoring-Bewertung und eine knowledge-Hygiene-Bewertung geleistet, kein Code geaendert. Befunde und die drei offenen Entscheidungsbuendel committet in frontend-refactoring-befunde.md. Der naechste Milestone (Interface verbessern, Code aufraeumen, Doku versoehnen) haengt an der Operator-Klaerung zu Arbeitsweise, Interface-Umbau und den zwei Grundsatzfragen. An die Leitstelle als handoff kommuniziert.
+
 ## 2026-06-21, Portfolio-Runde, Browser-Sichtung und B-Schaerfung
 
 Ausgangslage. Branch session/pflegesignal-vault-2026-06-20, synchron mit origin, Variante A und Triangulation committet (HEAD vor der Runde 2b0e0f8).
