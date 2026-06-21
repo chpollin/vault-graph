@@ -2,7 +2,21 @@
 
 Gedaechtnis der Lane fuer den Wiedereinstieg ohne Gespraechskontext. Je Runde ein Eintrag, neueste oben, knapp gehalten auf Verlauf und Entscheidungs-Provenienz. Der kanonische Wissensstand bleibt projektwissen.md, der Plan plan-zentrale-visualisierung.md, die volle Lane-Synthese liegt im forschungsleitstelle-Repo. Alle Eintraege sind Runden desselben Arbeitstags 2026-06-21, die Reihenfolge traegt die Chronologie, der Commit-Anker im Kopf verknuepft die Runde mit dem Git-Stand.
 
-## Frontend-Bewertung, Haertungsbefunde und Operator-Sichtung Phase A (dieser Commit)
+## Graph-Lesbarkeit, benannte Community-Regionen und Hub-Labels (dieser Commit)
+
+UI-Milestone aus dem Lesbarkeits-Hebel gebaut, auf das Operator-Signal continue und nach der Operator-Frage, ob die Knotenfarben klar sind und ob es eine Legende gibt. Die ehrliche Lage war, der Ring (Aussagetyp) hatte eine Legende, die Fuellung (Community) hatte keine, und eine Farbe-zu-Nummer-Legende waere nutzlos. Drei Aenderungen, rein im Template, `_build_payload` unangetastet, damit Determinismus- und Privacy-Netz gueltig bleiben.
+
+Erstens, Hub-Labels. Die Top 24 Knoten nach PageRank dauerhaft beschriftet (deterministischer id-Tiebreak), jenseits einer Zoomschwelle erscheint jedes nicht-gedimmte Label, bei Auswahl das Ego-Netz. Zweitens, Community-Regionen. Je Community eine blasse Convex Hull hinter den Knoten, beschriftet mit ihrem dominanten Ordner, so wird aus einer Fuellfarbe eine benennbare Region. Die Legende erklaert jetzt beide Achsen, Fuellung gleich Community, Ring gleich Aussagetyp. Drittens, der Zoom laeuft auf eine eigene Viewport-Gruppe statt auf alle g, das war ohnehin noetig, sobald Hulls und Labels als weitere Gruppen dazukommen.
+
+Ursachenfix statt Symptom. Die erste Sichtung zeigte, dass Convex Hulls nur tragen, wenn die Communities raeumlich getrennt liegen; im reinen Force-Layout ueberlappten sie in einem Ball zu riesigen Flaechen, die Region-Labels stapelten sich in der Mitte. Daher eine Cluster-Kraft, jede Community wird ueber forceX und forceY zu einem eigenen Anker auf einem Ring gezogen, die forceCenter-Kraft entfaellt. Danach trennen sich die Regionen in Lappen, die zweite Sichtung zeigt benannte, separierte Cluster.
+
+Ehrlicher Nebenbefund. Der Ordner Projects erscheint als Region-Label dreimal, weil der Projects-Ordner topologisch in drei Link-Communities zerfaellt; das ist kein Fehler, sondern genau die Triangulations-Aussage, dass Community und Ordner nicht deckungsgleich sind. Das Layout ist in der Force-Mathematik seed-deterministisch, in absoluten Koordinaten aber viewport-relativ; die Datei-Determinismus-Invariante bleibt unberuehrt, weil Positionen im Browser entstehen und nicht in der HTML liegen, 51 Tests gruen.
+
+Verifikation. 51 Tests gruen, Pipeline regeneriert, Browser-Sichtung im Vordergrund, neun benannte Community-Regionen mit Ordner-Labels, 24 Hub-Labels, beide Farbachsen in der Legende, Zoom auf einer Container-Gruppe, Screenshot-Spur des separierten Layouts.
+
+Durable Lehre. Die Browser-Sichtung eines d3-Force-Graphen braucht den Tab im Vordergrund. d3.timer nutzt requestAnimationFrame, das in inaktiven Tabs pausiert, dann macht die Simulation null Ticks, die Knoten bleiben exakt auf den d3-Startpositionen (erster Knoten 7.07, 0), ohne einen Konsolenfehler. Das Aktivieren des Tabs ueber einen Screenshot startet das Ticking.
+
+## Frontend-Bewertung, Haertungsbefunde und Operator-Sichtung Phase A (2aab5da)
 
 Operator hat das Phase-A-Interface lokal im Browser gesichtet (frischer Pipeline-Lauf, ueber localhost serviert) und die Richtung abgenommen, keine Korrektur an Palette oder Layout verlangt. Damit ist die Operator-Spur des M2-Umbaus eingeloest, die Sichtung positiv.
 

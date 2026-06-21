@@ -174,6 +174,7 @@ _TEMPLATE = r"""<!DOCTYPE html>
   #rail input[type=search], #rail select { width:100%; padding:4px 6px; border:1px solid #ccc; border-radius:3px; font-size:12px; background:#fff; }
   #rail label.chk { display:flex; align-items:center; gap:7px; font-size:12px; color:var(--muted); cursor:pointer; }
   .legend { display:flex; flex-direction:column; gap:4px; font-size:11px; color:var(--muted); margin-top:2px; }
+  .legend .note { color:#8a8a8a; line-height:1.35; margin-bottom:2px; }
   .legend .row { display:flex; align-items:center; gap:7px; }
   .legend .dot { width:11px; height:11px; border-radius:50%; background:#e9e9ea; border:2px solid; flex:none; }
   .legend .dot.befund { border-color:var(--befund); }
@@ -195,6 +196,9 @@ _TEMPLATE = r"""<!DOCTYPE html>
   .link { stroke:#c9c9c9; stroke-opacity:0; }
   .link.shown { stroke-opacity:.16; }
   .link.hot { stroke:var(--befund); stroke-opacity:.85; stroke-width:1.4px; }
+  .hull { fill-opacity:.07; stroke:none; pointer-events:none; }
+  .hulllabel { font-size:12px; font-weight:600; text-transform:uppercase; letter-spacing:.6px; pointer-events:none; paint-order:stroke; stroke:#fafafa; stroke-width:3px; stroke-linejoin:round; opacity:.55; text-anchor:middle; }
+  .nlabel { font-size:10px; fill:#3a3a3a; pointer-events:none; paint-order:stroke; stroke:#fafafa; stroke-width:2.6px; stroke-linejoin:round; }
 
   #detail { width:300px; flex:none; border-left:1px solid var(--line); background:var(--panel); overflow:auto; padding:13px; font-size:12px; }
   #detail.empty { color:#9a9a9a; font-style:italic; display:flex; align-items:center; text-align:center; }
@@ -277,8 +281,9 @@ _TEMPLATE = r"""<!DOCTYPE html>
       <label class="chk"><input type="checkbox" id="f-outlier"> nur Ausreisser</label>
       <h4>Graph</h4>
       <label class="chk"><input type="checkbox" id="f-edges"> Kanten schwach zeigen</label>
-      <h4>Aussagetyp</h4>
+      <h4>Farbe der Knoten</h4>
       <div class="legend">
+        <div class="note">Fuellung ist die Community, im Graphen als benannte Region hinterlegt. Der Ring ist der Aussagetyp.</div>
         <div class="row"><span class="dot befund"></span>Befund, datengestuetzt</div>
         <div class="row"><span class="dot diagnose"></span>Diagnose, Pflege</div>
         <div class="row"><span class="dot hypothese"></span>Hypothese, topologisch</div>
@@ -560,8 +565,21 @@ function mulberry32(a) {
   };
 }
 
-const linkSel = svg.append("g").selectAll("line").data(PAYLOAD.edges).join("line").attr("class","link");
-const nodeSel = svg.append("g").selectAll("circle").data(NODES).join("circle")
+// One zoom container holds all layers, drawn bottom to top:
+// community hulls, region labels, links, nodes, hub labels.
+const viewport = svg.append("g").attr("class","viewport");
+const hullG = viewport.append("g");
+const hullLabelG = viewport.append("g");
+const linkG = viewport.append("g");
+const nodeG = viewport.append("g");
+const labelG = viewport.append("g");
+
+// Community -> dominant folder, so a fill colour becomes a nameable region.
+const commLabel = new Map();
+NODES.forEach(n => { if (n.community >= 0 && !commLabel.has(n.community)) commLabel.set(n.community, n.comm_folder || ""); });
+
+const linkSel = linkG.selectAll("line").data(PAYLOAD.edges).join("line").attr("class","link");
+const nodeSel = nodeG.selectAll("circle").data(NODES).join("circle")
   .attr("r", d => radius(d.pagerank))
   .attr("fill", d => color(d.community))
   .on("click", (_, d) => selectNode(d.id))
@@ -571,19 +589,84 @@ const nodeSel = svg.append("g").selectAll("circle").data(NODES).join("circle")
     .on("end", (e,d) => { if(!e.active) sim.alphaTarget(0); d.fx=null; d.fy=null; }));
 nodeSel.append("title").text(d => `${d.title} (Community ${d.community})`);
 
+// Hub labels, always on for the top nodes by PageRank (deterministic id tie-break),
+// every non-dimmed label revealed beyond a zoom threshold.
+const LABEL_TOP_N = 24, LABEL_ZOOM = 1.8;
+let zoomK = 1;
+const topLabelIds = new Set(
+  [...NODES].sort((a,b) => b.pagerank - a.pagerank || (a.id < b.id ? -1 : 1))
+    .slice(0, LABEL_TOP_N).map(n => n.id)
+);
+const labelSel = labelG.selectAll("text").data(NODES).join("text")
+  .attr("class","nlabel").text(d => d.title);
+
+function updateLabels() {
+  const sel = state.selected;
+  const nbrs = sel ? new Set([sel, ...(outAdj.get(sel)||[]), ...(inAdj.get(sel)||[])]) : null;
+  labelSel.style("display", d => {
+    const show = sel
+      ? (d.id === sel || (zoomK > LABEL_ZOOM && nbrs.has(d.id)))
+      : (topLabelIds.has(d.id) || zoomK > LABEL_ZOOM) && passesFilter(d) && lensActive(d);
+    return show ? null : "none";
+  });
+}
+
+// Faint convex hull per community as a readable region, labelled by its folder.
+function inflate(hull, pad) {
+  const cx = d3.mean(hull, p => p[0]), cy = d3.mean(hull, p => p[1]);
+  return hull.map(([x,y]) => {
+    const dx = x-cx, dy = y-cy, len = Math.hypot(dx,dy) || 1;
+    return [x + dx/len*pad, y + dy/len*pad];
+  });
+}
+function renderHulls() {
+  const data = d3.groups(NODES, d => d.community)
+    .filter(([c, ns]) => c >= 0 && ns.length >= 3)
+    .map(([c, ns]) => {
+      const hull = d3.polygonHull(ns.map(n => [n.x, n.y]));
+      if (!hull) return null;
+      return { c, path: "M" + inflate(hull, 16).join("L") + "Z",
+               cx: d3.mean(ns, n => n.x), cy: d3.mean(ns, n => n.y) };
+    })
+    .filter(Boolean);
+  hullG.selectAll("path").data(data, d => d.c).join("path")
+    .attr("class","hull").attr("fill", d => color(d.c)).attr("d", d => d.path);
+  hullLabelG.selectAll("text").data(data.filter(d => commLabel.get(d.c)), d => d.c).join("text")
+    .attr("class","hulllabel").attr("fill", d => color(d.c))
+    .attr("x", d => d.cx).attr("y", d => d.cy)
+    .text(d => commLabel.get(d.c));
+}
+
+// Pull each community toward its own anchor on a ring, so the clusters separate
+// into nameable regions instead of overlapping in one ball.
+const commIds = communities.filter(c => c >= 0);
+const ringR = Math.min(gWidth, gHeight) * 0.34;
+const commAnchor = new Map(commIds.map((c, i) => {
+  const a = 2 * Math.PI * i / commIds.length;
+  return [c, { x: gWidth/2 + ringR*Math.cos(a), y: gHeight/2 + ringR*Math.sin(a) }];
+}));
+const anchorOf = c => commAnchor.get(c) || { x: gWidth/2, y: gHeight/2 };
+
 const sim = d3.forceSimulation(NODES)
   .randomSource(mulberry32(0x9e3779b9))
-  .force("link", d3.forceLink(PAYLOAD.edges).id(d => d.id).distance(42).strength(0.55))
-  .force("charge", d3.forceManyBody().strength(-85))
-  .force("center", d3.forceCenter(gWidth/2, gHeight/2))
+  .force("link", d3.forceLink(PAYLOAD.edges).id(d => d.id).distance(34).strength(0.5))
+  .force("charge", d3.forceManyBody().strength(-70))
+  .force("x", d3.forceX(d => anchorOf(d.community).x).strength(0.18))
+  .force("y", d3.forceY(d => anchorOf(d.community).y).strength(0.18))
   .force("collide", d3.forceCollide().radius(d => radius(d.pagerank)+1))
   .alphaDecay(0.035)
   .on("tick", () => {
     linkSel.attr("x1", d=>d.source.x).attr("y1", d=>d.source.y).attr("x2", d=>d.target.x).attr("y2", d=>d.target.y);
     nodeSel.attr("cx", d=>d.x).attr("cy", d=>d.y);
+    labelSel.attr("x", d=>d.x + radius(d.pagerank) + 3).attr("y", d=>d.y + 3);
+    renderHulls();
   });
 
-svg.call(d3.zoom().scaleExtent([0.12, 6]).on("zoom", ev => svg.selectAll("g").attr("transform", ev.transform)));
+svg.call(d3.zoom().scaleExtent([0.12, 6]).on("zoom", ev => {
+  viewport.attr("transform", ev.transform);
+  zoomK = ev.transform.k;
+  updateLabels();
+}));
 
 function idOf(x) { return (x && typeof x === "object") ? x.id : x; }
 
@@ -608,6 +691,7 @@ function updateGraph() {
   linkSel
     .classed("hot", d => sel && (idOf(d.source)===sel || idOf(d.target)===sel))
     .classed("shown", d => !sel && state.showEdges);
+  updateLabels();
 }
 
 // --- Shared selection ---
@@ -678,7 +762,7 @@ renderTriage();
 setLens("struktur");
 window.addEventListener("resize", () => {
   gWidth = svg.node().clientWidth; gHeight = svg.node().clientHeight;
-  sim.force("center", d3.forceCenter(gWidth/2, gHeight/2)).alpha(0.2).restart();
+  sim.alpha(0.2).restart();
 });
 </script>
 </body>

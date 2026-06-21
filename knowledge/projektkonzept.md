@@ -14,7 +14,7 @@ Das Tool liefert eine topologische und eine pragmatische Analyse plus zwei inter
 
 1. **Topologische Befunde.** Communities mit Modularitaet, Centrality-Hubs, Brueckenknoten, K-Core-Schichten. Reproduzierbar mit fixen Seeds.
 2. **Pragmatische Sicht.** Triangulation der Link-Communities gegen die Ordnerstruktur, gemessen ueber Reinheit und NMI, mit Ausreisser-Knoten als Diagnose-Kandidaten.
-3. **Visualisierung.** Selfcontained HTML. Eine schlichte Force-Visualisierung (topology.html) und die Werkbank explorer.html mit dem Graphen als Hauptflaeche, Kanten bei Auswahl, drei Aussagetyp-Akzenten, gruppierter Statuszeile, schlanker Begleittabelle und drei Linsen (Struktur, Pflege, Wachstum).
+3. **Visualisierung.** Selfcontained HTML. Eine schlichte Force-Visualisierung (topology.html) und die Werkbank explorer.html mit dem Graphen als Hauptflaeche, benannten Community-Regionen und Hub-Labels, Kanten bei Auswahl, drei Aussagetyp-Akzenten, gruppierter Statuszeile, schlanker Begleittabelle und drei Linsen (Struktur, Pflege, Wachstum).
 4. **Privacy.** Business-Knoten werden mehrlagig anonymisiert. Topologie bleibt sichtbar.
 5. **Methodische Disziplin.** Befund, Diagnose, Hypothese werden unterschieden.
 
@@ -26,7 +26,7 @@ Phasen als Module in `vault_graph/`, orchestriert ueber `__main__.py`.
 2. **Topology** (`topology.py`): Centrality-Suite, Louvain-Communities, K-Core, Brueckenknoten
 3. **Pragmatics** (`pragmatics.py`): Triangulation Community gegen Ordner, NMI, Reinheit, Ausreisser, Tag-Kohaesion
 4. **Render** (`render.py`): schlichte HTML-Visualisierung `topology.html`
-5. **Explorer** (`explorer.py`): Werkbank `explorer.html`, Graph als Hauptflaeche, Linsen, Kanten bei Auswahl, Aussagetyp-Ringe
+5. **Explorer** (`explorer.py`): Werkbank `explorer.html`, Graph als Hauptflaeche, benannte Community-Regionen, Hub-Labels, Linsen, Kanten bei Auswahl, Aussagetyp-Ringe
 
 Begleitend erzeugen `report_parse.py`, `report_topology.py` und `report_pragmatics.py` Markdown-Berichte fuer die Gate-Kontrolle.
 
