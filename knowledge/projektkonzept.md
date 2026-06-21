@@ -14,7 +14,7 @@ Das Tool liefert eine topologische und eine pragmatische Analyse plus zwei inter
 
 1. **Topologische Befunde.** Communities mit Modularitaet, Centrality-Hubs, Brueckenknoten, K-Core-Schichten. Reproduzierbar mit fixen Seeds.
 2. **Pragmatische Sicht.** Triangulation der Link-Communities gegen die Ordnerstruktur, gemessen ueber Reinheit und NMI, mit Ausreisser-Knoten als Diagnose-Kandidaten.
-3. **Visualisierung.** Selfcontained HTML, Force-Directed-Graph, Knoten gefaerbt nach Community, Groesse nach PageRank, Brueckenknoten markiert. Dazu eine Werkbank mit Befundtabelle, Pflege-Triage und Detailpanel.
+3. **Visualisierung.** Selfcontained HTML. Eine schlichte Force-Visualisierung (topology.html) und die Werkbank explorer.html mit dem Graphen als Hauptflaeche, Kanten bei Auswahl, drei Aussagetyp-Akzenten, gruppierter Statuszeile, schlanker Begleittabelle und drei Linsen (Struktur, Pflege, Wachstum).
 4. **Privacy.** Business-Knoten werden mehrlagig anonymisiert. Topologie bleibt sichtbar.
 5. **Methodische Disziplin.** Befund, Diagnose, Hypothese werden unterschieden.
 
@@ -26,7 +26,7 @@ Phasen als Module in `vault_graph/`, orchestriert ueber `__main__.py`.
 2. **Topology** (`topology.py`): Centrality-Suite, Louvain-Communities, K-Core, Brueckenknoten
 3. **Pragmatics** (`pragmatics.py`): Triangulation Community gegen Ordner, NMI, Reinheit, Ausreisser, Tag-Kohaesion
 4. **Render** (`render.py`): schlichte HTML-Visualisierung `topology.html`
-5. **Explorer** (`explorer.py`): Werkbank `explorer.html`
+5. **Explorer** (`explorer.py`): Werkbank `explorer.html`, Graph als Hauptflaeche, Linsen, Kanten bei Auswahl, Aussagetyp-Ringe
 
 Begleitend erzeugen `report_parse.py`, `report_topology.py` und `report_pragmatics.py` Markdown-Berichte fuer die Gate-Kontrolle.
 
@@ -39,7 +39,7 @@ Im `output/`-Verzeichnis (nicht versioniert):
 - `findings/topology-bericht.md`: Communities, Centrality-Hubs, Brueckenknoten, K-Core
 - `findings/triangulation-bericht.md`: Community gegen Ordner, NMI, Reinheit, Ausreisser
 - `visualisierung/topology.html`: schlichte Force-Directed-Visualisierung
-- `visualisierung/explorer.html`: Werkbank mit Tabelle, Triage, Graph, Detailpanel
+- `visualisierung/explorer.html`: Werkbank, Graph als Hauptflaeche, Linsen, Begleittabelle, Triage, Detail
 
 ## Vorgehen
 
@@ -47,7 +47,7 @@ Iterative Commits, jeder einzeln pruefbar. Der laufende Verlauf steht in [journa
 
 ## Offen, die semantische Sicht und der Wissensgraph
 
-Die zentrale Richtung ist beschlossen, die Netzwerkvisualisierung wird das zentrale UI-Element und der reine Linkgraph wird zu einem getypten Wissensgraphen. Der ausgearbeitete Plan steht in [plan-zentrale-visualisierung.md](plan-zentrale-visualisierung.md), der Gestaltungsvorschlag fuer den Interface-Umbau in [gestaltungsvorschlag-interface.md](gestaltungsvorschlag-interface.md), die semantische Schicht im Detail in [aehnlichkeitsanalyse-vorlage.md](aehnlichkeitsanalyse-vorlage.md). Noch nicht gebaut sind:
+Die zentrale Richtung ist beschlossen, die Netzwerkvisualisierung wird das zentrale UI-Element und der reine Linkgraph wird zu einem getypten Wissensgraphen. Der ausgearbeitete Plan steht in [plan-zentrale-visualisierung.md](plan-zentrale-visualisierung.md), der Gestaltungsvorschlag fuer den Interface-Umbau in [gestaltungsvorschlag-interface.md](gestaltungsvorschlag-interface.md), als Phase A umgesetzt (Graph als Hauptflaeche, Linsen, Kanten bei Auswahl, Aussagetyp-Ringe, gruppierte Statuszeile, schlanke Tabelle, stabile Positionen), die semantische Schicht im Detail in [aehnlichkeitsanalyse-vorlage.md](aehnlichkeitsanalyse-vorlage.md). Noch nicht gebaut sind:
 
 - Semantische Sicht ueber Text-Embeddings, ein lokales mehrsprachiges Modell, Linking-Kandidaten via Kosinusaehnlichkeit (Schicht eins, Scout)
 - Getypte Relationen ueber eine kleine Taxonomie, vom Sprachmodell vorgeschlagen und vom Menschen bestaetigt (Schicht zwei, Karte)

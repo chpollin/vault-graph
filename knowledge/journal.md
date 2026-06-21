@@ -2,6 +2,20 @@
 
 Gedaechtnis der Lane fuer den Wiedereinstieg ohne Gespraechskontext. Je Runde ein Eintrag, neueste oben, knapp gehalten auf Verlauf und Entscheidungs-Provenienz. Der kanonische Wissensstand bleibt projektwissen.md, der Plan plan-zentrale-visualisierung.md, die volle Lane-Synthese liegt im forschungsleitstelle-Repo. Alle Eintraege sind Runden desselben Arbeitstags 2026-06-21, die Reihenfolge traegt die Chronologie, der Commit-Anker im Kopf verknuepft die Runde mit dem Git-Stand.
 
+## Milestone-Runde, Invarianten-Netz und Phase-A-Interface (787fadf, dann Interface-Commit)
+
+Betriebsmodell gewechselt. Die Lane entscheidet offene Gestaltungs- und Methodenfragen jetzt aus der Fachlichkeit und sichert reversibel-internes nach main, statt vor jedem Schritt eine Freigabe einzuholen; nach aussen Wirkendes bleibt operator-gated. Damit faellt das selbst gesetzte Interface-Gate der Vorrunde, der Gestaltungsvorschlag wird nicht mehr vorab freigegeben, sondern als Spur (Screenshots) nachgesichtet. Zwei Milestones gebaut.
+
+M1, Invarianten-Netz. tests/test_invariants.py sichert die zwei zentralen Versprechen maschinell, die bisher nur per Hand geprueft waren. Byte-Determinismus der Pipeline in-process und ueber zwei Subprozesse mit verschiedenem PYTHONHASHSEED, das deckt hash-seed-abhaengige Mengen-Iteration und ungeseedete Zufallsquellen ab. Privacy-Invariante der explorer.html-Payload, anonyme Knoten ohne Inhalts-Metadaten, aus der Triage ausgenommen, kein Sprung, kein Klartext-Leak im gerenderten HTML. Befund nebenbei, der Determinismus ist relativ zu einem festen vault_path, der in graph.json serialisiert wird; in Betrieb ist VAULT_PATH konstant, die Eigenschaft haelt, der Test haelt den Pfad entsprechend fest. 51 Tests gruen.
+
+M2, Phase-A-Interface. explorer.py, Python-Payload verhaltensgleich (Determinismus- und Privacy-Test bleiben gueltig), Template neu. Flaechenumkehr, Graph als Hauptflaeche, Tabelle als eingeklappte Schublade unten, Detail rechts. Kanten im Ruhezustand aus, erst bei Auswahl (De-Hairball, im Browser belegt, null von 6156 Kanten sichtbar im Ruhezustand, 257 bei Auswahl des Top-Hubs Applied-GenerativeAI MOC). Drei Aussagetyp-Akzente als Knotenringe, Befund blau, Diagnose orange, Hypothese violett, anon rot gestrichelt, durchgehend in Graph, Tabelle und Detail. Gruppierte Statuszeile. Drei Linsen ueber dieselbe Karte, Struktur, Pflege (dimmt auf die Diagnose-Knoten, Dock zeigt die Triage), Wachstum (leeres Geruest, so benannt). Stabile Positionen ueber eine geseedete randomSource der Simulation.
+
+Eigene Designentscheidungen gegenueber dem Gestaltungsvorschlag, aus der Fachlichkeit getroffen. Festes Drei-Spalten-Layout statt Vollbild-Umschalter. Community als gedaempfte Knotenfuellung mit dem Aussagetyp als Ring, statt Aussagetyp als Fuellung; so zeigt der Ruhezustand Community-Struktur und die Anomalien stechen als Ring heraus, ein bewusstes Aufloesen der inneren Spannung des Vorschlags. Optionaler Schalter Kanten schwach zeigen, haelt den De-Hairball-Default auffindbar.
+
+Verifikation. 51 Tests gruen. explorer.html byte-identisch ueber zwei volle Laeufe gegen den lebenden Vault. DOM-Sichtpruefung gruen, referentielle Integritaet (null haengende Kanten, null haengende tote Links), vier anonyme Knoten ohne Leak und aus der Triage ausgenommen, Statuszeile deckungsgleich. Browser-Spur mit drei Screenshots, Ruhezustand, Auswahl mit Kanten und Detail, Pflege-Linse mit Triage.
+
+Durable Lehre. d3 forceSimulation laesst sich ueber randomSource(prng) deterministisch machen; der jiggle-Schritt in forceManyBody nutzt sonst Math.random und bricht stabile Positionen ueber Laeufe.
+
 ## Arbeitsphase, Frisch-Lauf und Gate-Schaerfung
 
 v3-Statusmeldung an die Leitstelle abgegeben. Frischer Pipeline-Lauf gegen den lebenden Vault, weil die obsidian-vault-Lane flussaufwaerts die geparsten Dateien editiert, Ergebnis drift-frei, graph.json und explorer.html byte-identisch ueber zwei Laeufe, Testsuite gruen. Damit sind die Determinismus-Aussagen der Synthese aktuell.
