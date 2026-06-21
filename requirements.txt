@@ -3,3 +3,9 @@ python-frontmatter>=1.0
 python-louvain>=0.16
 numpy>=1.26
 pytest>=8.0
+
+# Nur fuer den semantischen Scout (vault_graph/semantics.py), lazy importiert.
+# Kern und Tests laufen ohne diese beiden Pakete, sie werden erst beim echten
+# Modell-Lauf (python -m vault_graph.semantics) gebraucht.
+sentence-transformers>=2.7
+torch>=2.2

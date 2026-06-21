@@ -27,6 +27,7 @@ Phasen als Module in `vault_graph/`, orchestriert ueber `__main__.py`.
 3. **Pragmatics** (`pragmatics.py`): Triangulation Community gegen Ordner, NMI, Reinheit, Ausreisser, Tag-Kohaesion
 4. **Render** (`render.py`): schlichte HTML-Visualisierung `topology.html`
 5. **Explorer** (`explorer.py`): Werkbank `explorer.html`, Graph als Hauptflaeche, benannte Community-Regionen, Hub-Labels, Linsen, Kanten bei Auswahl, Aussagetyp-Ringe
+6. **Semantics** (`semantics.py`): semantischer Scout (Schicht 1), lokale Embedding-Aehnlichkeit, top-k Nachbarn je Knoten, Diagnose latenter Verknuepfungen, hinter dem Privacy-Remap, als getrennter Modell-Lauf ausserhalb des Determinismus-Kerns
 
 Begleitend erzeugen `report_parse.py`, `report_topology.py` und `report_pragmatics.py` Markdown-Berichte fuer die Gate-Kontrolle.
 
@@ -40,6 +41,8 @@ Im `output/`-Verzeichnis (nicht versioniert):
 - `findings/triangulation-bericht.md`: Community gegen Ordner, NMI, Reinheit, Ausreisser
 - `visualisierung/topology.html`: schlichte Force-Directed-Visualisierung
 - `visualisierung/explorer.html`: Werkbank, Graph als Hauptflaeche, Linsen, Begleittabelle, Triage, Detail
+- `data/similarity.json`: top-k semantische Nachbarn je Knoten mit Cosinus und Link-Distanz plus latente-Link-Liste, eingefroren durch den Modell-Lauf
+- `findings/latente-verknuepfungen.md`: Diagnose hochaehnlicher Notizpaare ohne Wikilink, rangiert nach Aehnlichkeit
 
 ## Vorgehen
 
@@ -49,7 +52,7 @@ Iterative Commits, jeder einzeln pruefbar. Der laufende Verlauf steht in [journa
 
 Die zentrale Richtung ist beschlossen, die Netzwerkvisualisierung wird das zentrale UI-Element und der reine Linkgraph wird zu einem getypten Wissensgraphen. Der ausgearbeitete Plan steht in [plan-zentrale-visualisierung.md](plan-zentrale-visualisierung.md), der Gestaltungsvorschlag fuer den Interface-Umbau in [gestaltungsvorschlag-interface.md](gestaltungsvorschlag-interface.md), als Phase A umgesetzt (Graph als Hauptflaeche, Linsen, Kanten bei Auswahl, Aussagetyp-Ringe, gruppierte Statuszeile, schlanke Tabelle, stabile Positionen), die semantische Schicht im Detail in [aehnlichkeitsanalyse-vorlage.md](aehnlichkeitsanalyse-vorlage.md). Noch nicht gebaut sind:
 
-- Semantische Sicht ueber Text-Embeddings, ein lokales mehrsprachiges Modell, Linking-Kandidaten via Kosinusaehnlichkeit (Schicht eins, Scout)
+- Semantische Sicht ueber Text-Embeddings als Modul gebaut (semantics.py, Schicht eins, Scout), lokales mehrsprachiges Modell, Linking-Kandidaten via Kosinusaehnlichkeit; offen bleibt nur noch der echte Modell-Lauf, der similarity.json gegen den lebenden Vault einfriert
 - Getypte Relationen ueber eine kleine Taxonomie, vom Sprachmodell vorgeschlagen und vom Menschen bestaetigt (Schicht zwei, Karte)
 - Die semantische Partition als dritte Achse der Triangulation, neben Community und Ordner
 - Ein Diagnose-Bericht latenter Verknuepfungen (aehnliche, aber unverlinkte Notizen)

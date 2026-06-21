@@ -2,7 +2,23 @@
 
 Gedaechtnis der Lane fuer den Wiedereinstieg ohne Gespraechskontext. Je Runde ein Eintrag, neueste oben, knapp gehalten auf Verlauf und Entscheidungs-Provenienz. Der kanonische Wissensstand bleibt projektwissen.md, der Plan plan-zentrale-visualisierung.md, die volle Lane-Synthese liegt im forschungsleitstelle-Repo. Alle Eintraege sind Runden desselben Arbeitstags 2026-06-21, die Reihenfolge traegt die Chronologie, der Commit-Anker im Kopf verknuepft die Runde mit dem Git-Stand.
 
-## Graph-Lesbarkeit, benannte Community-Regionen und Hub-Labels (dieser Commit)
+## M3 Semantischer Scout gebaut, M4 gescopt (dieser Commit)
+
+Order-Runde, der Koordinator hat auf meinem Stand 44547c7 entschieden, M3 bauen, M4 nur scopen, die schwere Abhaengigkeit lazy aufnehmen (orchestrator-entschieden, kein Gate). Nach dem Sync den Auftrag autonom umgesetzt.
+
+M3, der semantische Scout als Schicht 1 der Phase B. Neues Modul `vault_graph/semantics.py`. Es bettet jede nicht-anonymisierte Notiz lokal ein und findet je Knoten die top-k inhaltlich naechsten ueber Cosinus-Aehnlichkeit, dazu eine Diagnose-Liste latenter Verknuepfungen, hochaehnliche Paare ohne direkten Wikilink, rangiert nach Aehnlichkeit, mit der aktuellen Link-Distanz je Paar. Direkt verlinkte Paare (Distanz 1) sind ausgeschlossen, sie sind keine Luecke. Artefakte `output/data/similarity.json` (je Knoten top-k mit Cosinus und Link-Distanz plus die latente-Link-Liste) und der Report `findings/latente-verknuepfungen.md`, beide gitignored unter output/.
+
+Determinismus-Trennung als Konstruktionsprinzip. Die Schichtlogik (Dokumentaufbau, Top-k, Schwelle, Ausschluss verlinkter Paare, Privacy-Filter) laeuft ueber eine injizierbare Embedding-Funktion und ist mit Dummy-Vektoren ohne Modell-Lauf deterministisch testbar; alle Reihenfolgen sind nach Key sortiert, Cosinus auf vier Stellen gerundet, so ist similarity.json byte-identisch ueber zwei Laeufe bei fester injizierter Funktion. Der echte Modell-Lauf bleibt ausserhalb des Determinismus-Tests, sein Ergebnis ist ein eingefrorenes Artefakt mit fixierter Modellversion und Seed.
+
+Privacy hinter dem Remap. Anonymisierte Business-Knoten werden nie eingebettet (uebersprungen ueber `privacy_anonymized`), ihr Rohtext wird nie gelesen, sie erscheinen weder als Knoten noch als Nachbar in similarity.json, kein Geheimtext leakt. Der Volltext wird frisch von der Platte gelesen (graph.json fuehrt nur den Preview, parse.py hatte das so vorgezeichnet), das Modell laeuft lokal, der Rohtext verlaesst den Rechner nicht. Dependency, `sentence-transformers` und `torch` lazy in requirements.txt, erst im Modul-Aufruf importiert, Kern und Tests laufen ohne sie. Modellwahl multilingual-e5-large (mehrsprachig, passt zum deutsch-englischen Vault), als Bau-Zeitpunkt-Abhaengigkeit verdrahtet.
+
+Verifikation. 61 Tests gruen (51 plus 10 neue in tests/test_semantics.py), die Schichtlogik mit kontrollierten Themen-Markern geprueft (ein latent gemeldetes Paar gleichen Themas ohne Link, ein direkt verlinktes Paar trotz Themengleichheit nicht gemeldet, top-k eingehalten, Nachbarn absteigend sortiert), die Privacy-Invariante gegen das serialisierte Artefakt (kein Geheim-Key, kein Angebot-Hash, kein Geheimtext), der Byte-Determinismus ueber zwei Laeufe. Lazy-Import bestaetigt, das Modul laedt ohne installiertes sentence-transformers.
+
+Offen, der echte Freeze. similarity.json gegen den lebenden Vault einfrieren steht noch aus, es braucht die Installation von sentence-transformers und den Modell-Download (torch ist lokal vorhanden, das Paket nicht). Das ist der vom Order getrennte Modell-Lauf, kein Code-Delta. Cross-Lane, vor dem Einfrieren ein frischer Pipeline-Lauf gegen den lebenden Vault, da obsidian-vault flussaufwaerts die geparsten Dateien editiert.
+
+M4 gescopt, nicht gebaut. Auf die M3-Kandidatenpaare setzt eine kleine Relationstaxonomie, sechs SKOS-angelehnte Typen plus verwandt als Rueckfall, sprachmodell-vorgeschlagen und menschlich bestaetigt, als eingefrorenes versioniertes Vorschlagsartefakt getrennt vom deterministischen Kern. Scope-Notiz im projektwissen, Bau erst auf Order.
+
+## Graph-Lesbarkeit, benannte Community-Regionen und Hub-Labels (44547c7)
 
 UI-Milestone aus dem Lesbarkeits-Hebel gebaut, auf das Operator-Signal continue und nach der Operator-Frage, ob die Knotenfarben klar sind und ob es eine Legende gibt. Die ehrliche Lage war, der Ring (Aussagetyp) hatte eine Legende, die Fuellung (Community) hatte keine, und eine Farbe-zu-Nummer-Legende waere nutzlos. Drei Aenderungen, rein im Template, `_build_payload` unangetastet, damit Determinismus- und Privacy-Netz gueltig bleiben.
 
