@@ -10,6 +10,7 @@ Projektkonzept des Tools. Methodische Grundlage in [../METHODIK.md](../METHODIK.
 - [journal.md](journal.md): Lane-Journal, Verlauf und Entscheidungs-Provenienz je Runde
 - [variante-b-schreibterritorium.md](variante-b-schreibterritorium.md): Entscheidungsvorlage Variante B, Schreibterritorium gegen die obsidian-vault-Lane
 - [frontend-refactoring-befunde.md](frontend-refactoring-befunde.md): Befunde zu Interface, Refactoring und Doku, Entscheidungsvorlage fuer den naechsten Milestone
+- [aehnlichkeitsanalyse-vorlage.md](aehnlichkeitsanalyse-vorlage.md): ausgearbeitete Vorlage zur semantischen Aehnlichkeitsanalyse (Funktionsweise, Modell, Kosten, Empfehlung)
 
 ## Lesepfad
 

@@ -2,6 +2,12 @@
 
 Gedaechtnis der Lane fuer den Wiedereinstieg ohne Gespraechskontext. Knapp, je Runde ein Eintrag, neueste oben. Der kanonische Wissensstand bleibt projektwissen.md, das Journal haelt nur den Verlauf und die Entscheidungs-Provenienz.
 
+## 2026-06-21, Leitstellen-order, Ähnlichkeitsanalyse-Vorlage und Konsolidierung auf main
+
+Order der Leitstelle eingegangen und umgesetzt. Drei Entscheidungen geschlossen. vault-graph bleibt reines Lese- und Analysewerkzeug ohne Vault-Schreibzugriff, damit ist die Variante-B-Frage mit Nein entschieden und variante-b-schreibterritorium.md gegenstandslos. Vault-Name verifiziert als obsidian. Arbeitsmodus geändert, alles in main, keine eigenen Branches, Hintergrund-Commit ohne Feedback. main per Fast-Forward auf den Session-Stand d8b90dd konsolidiert (war noch auf MVP 4383e93), die Session-Branch bleibt als Sicherungsspur bestehen.
+
+Auftrag ausgearbeitet. knowledge/aehnlichkeitsanalyse-vorlage.md, die von der Leitstelle verlangte volle Vorlage zur semantischen Ähnlichkeitsanalyse. Funktionsweise in vier Schritten (Text, Embedding, paarweise Cosinus-Ähnlichkeit, Spiegelung gegen den Linkgraph), Modellwahl lokal gegen API mit dem Datenschutz als Entscheidungsachse, Kostenschätzung (monetär in beiden Wegen im Cent-Bereich, reale Kosten sind Datenabfluss gegen Abhängigkeitsgewicht), Erkenntnisgewinn (latente Verknüpfungen als Diagnose, dritte Triangulationsachse, Near-Dubletten, Substrat für die agent-lesbare Schicht), methodische Einordnung im Drei-Aussagetypen-Rahmen, Empfehlung lokales Modell und neues Modul semantics.py. Zwei echte Operator-Entscheidungen offen gehalten, schwere torch-Abhängigkeit und ob die Semantiksicht zugleich das Agent-Substrat wird.
+
 ## 2026-06-21, Analyse-Session, UI-Kritik und Milestone-Vorbereitung
 
 Auf Operator-Wunsch eine konstruktiv-kritische UI-Analyse, eine Refactoring-Bewertung und eine knowledge-Hygiene-Bewertung geleistet, kein Code geaendert. Befunde und die drei offenen Entscheidungsbuendel committet in frontend-refactoring-befunde.md. Der naechste Milestone (Interface verbessern, Code aufraeumen, Doku versoehnen) haengt an der Operator-Klaerung zu Arbeitsweise, Interface-Umbau und den zwei Grundsatzfragen. An die Leitstelle als handoff kommuniziert.
