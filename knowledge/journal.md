@@ -2,6 +2,10 @@
 
 Gedaechtnis der Lane fuer den Wiedereinstieg ohne Gespraechskontext. Knapp, je Runde ein Eintrag, neueste oben. Der kanonische Wissensstand bleibt projektwissen.md, das Journal haelt nur den Verlauf und die Entscheidungs-Provenienz.
 
+## 2026-06-21, autonomes Aufräumen, tote Kennzahl raus und Doku-Versöhnung
+
+Die zwei ohne Richtungsentscheidung umsetzbaren Punkte abgearbeitet. closeness aus topology.py entfernt, verifiziert toter Code (berechnet, in den Knoten-Record geschrieben, von keinem Konsumenten gelesen, Grep über das ganze Repo). Damit fünf statt sechs Centrality-Maße, die teuerste Berechnung fällt weg, die graph.json trägt den Schlüssel nicht mehr. Doku-Versöhnung, projektkonzept.md und METHODIK.md neu geschrieben, beide rahmten die längst gebaute pragmatische Sicht und die Triangulation noch als Stage-2-Zukunft und nannten ein nie existierendes Modul triangulate.py. Jetzt korrekt, projektkonzept.md tritt auf Plan und Rationale zurück und verweist für den Bau-Stand auf projektwissen.md, die semantische Sicht ist der einzig verbliebene offene Strang. Wurzel-README, Statustabelle und Scope und Output-Liste auf den realen Stand gebracht, eingefrorene Beispielzahlen aus METHODIK.md entfernt. Verifiziert, 44 Tests grün, graph.json und explorer.html byte-identisch über zwei Läufe, closeness null Treffer.
+
 ## 2026-06-21, Leitstellen-order, Ähnlichkeitsanalyse-Vorlage und Konsolidierung auf main
 
 Order der Leitstelle eingegangen und umgesetzt. Drei Entscheidungen geschlossen. vault-graph bleibt reines Lese- und Analysewerkzeug ohne Vault-Schreibzugriff, damit ist die Variante-B-Frage mit Nein entschieden und variante-b-schreibterritorium.md gegenstandslos. Vault-Name verifiziert als obsidian. Arbeitsmodus geändert, alles in main, keine eigenen Branches, Hintergrund-Commit ohne Feedback. main per Fast-Forward auf den Session-Stand d8b90dd konsolidiert (war noch auf MVP 4383e93), die Session-Branch bleibt als Sicherungsspur bestehen.

@@ -1,7 +1,7 @@
 """Topology-Sicht: Linkgraph-Analyse.
 
 Liefert fuer den MVP:
-- Centrality-Suite (in/out degree, betweenness, eigenvector, pagerank, closeness)
+- Centrality-Suite (in/out degree, betweenness, eigenvector, pagerank)
 - Louvain-Communities auf dem ungerichteten Projekt
 - Bruckenknoten via Betweenness-Z-Score
 - K-Core-Dekomposition
@@ -28,7 +28,7 @@ def analyze_topology(
     Returns:
         dict mit Schluesseln:
         - centralities: {node_key: {degree, in_degree, out_degree, betweenness,
-            eigenvector, pagerank, closeness}}
+            eigenvector, pagerank}}
         - communities: {node_key: community_id (int)}
         - community_sizes: {community_id: int}
         - modularity: float
@@ -69,10 +69,10 @@ def analyze_topology(
 
 
 def _compute_centralities(graph: nx.DiGraph) -> dict[str, dict[str, float]]:
-    """Sechs Centrality-Mase pro Knoten.
+    """Fuenf Centrality-Mase pro Knoten.
 
-    Eigenvector und Closeness koennen bei isolierten Teilgraphen versagen
-    (PowerIteration konvergiert nicht). Wir fangen das ab und liefern 0.0.
+    Eigenvector kann bei isolierten Teilgraphen versagen (PowerIteration
+    konvergiert nicht). Wir fangen das ab und liefern 0.0.
     """
     in_deg = dict(graph.in_degree())
     out_deg = dict(graph.out_degree())
@@ -86,11 +86,6 @@ def _compute_centralities(graph: nx.DiGraph) -> dict[str, dict[str, float]]:
     except Exception:
         eigenvector = {n: 0.0 for n in graph.nodes}
 
-    try:
-        closeness = nx.closeness_centrality(graph)
-    except Exception:
-        closeness = {n: 0.0 for n in graph.nodes}
-
     result: dict[str, dict[str, float]] = {}
     for node in graph.nodes:
         result[node] = {
@@ -100,7 +95,6 @@ def _compute_centralities(graph: nx.DiGraph) -> dict[str, dict[str, float]]:
             "betweenness": float(betweenness.get(node, 0.0)),
             "eigenvector": float(eigenvector.get(node, 0.0)),
             "pagerank": float(pagerank.get(node, 0.0)),
-            "closeness": float(closeness.get(node, 0.0)),
         }
     return result
 

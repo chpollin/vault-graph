@@ -1,70 +1,65 @@
 # Projektkonzept
 
-Ziele, Architektur und Vorgehen des vault-graph-Tools. Methodische Grundlage in [../METHODIK.md](../METHODIK.md).
+Ziele, Architektur und Vorgehen des vault-graph-Tools. Methodische Grundlage in [../METHODIK.md](../METHODIK.md). Der aktuelle Bau-Stand mit Datenarchitektur und Befunden steht in [projektwissen.md](projektwissen.md), der Verlauf in [journal.md](journal.md). Dieses Dokument haelt den Plan und das Rationale, nicht den laufenden Zustand.
 
 ## Frage
 
-Welche Strukturen lassen sich im Linkgraph eines Obsidian-Vaults methodisch belastbar identifizieren? Im MVP nur topologisch; in Stage 2 dreifach trianguliert.
+Welche Strukturen lassen sich im Linkgraph eines Obsidian-Vaults methodisch belastbar identifizieren? Topologisch ueber den Linkgraph, pragmatisch ueber die Triangulation gegen die Ordnerstruktur, und perspektivisch semantisch ueber inhaltliche Aehnlichkeit.
 
-## MVP-Anspruch
+## Anspruch
 
-Der MVP liefert eine topologische Analyse plus eine interaktive HTML-Visualisierung. Er ist ehrlich darin, was er noch *nicht* leistet: keine semantische Sicht, keine Triangulation, keine Aussage über *Wissensnetzwerke* im vollen Sinn.
+Das Tool liefert eine topologische und eine pragmatische Analyse plus zwei interaktive HTML-Ausgaben. Es ist ehrlich darin, was es noch nicht leistet, naemlich die semantische Sicht und damit die volle Triangulation aus drei Sichten. Es macht keine Wertung und keine inhaltliche Aussage ueber einzelne Dokumente.
 
-## Ziele (MVP)
+## Ziele
 
-1. **Topologische Befunde.** Communities mit Modularität, Centrality-Hubs, Brückenknoten, K-Core-Schichten. Reproduzierbar mit fixen Seeds.
-2. **Visualisierung.** Ein selfcontained HTML-File, Force-Directed-Graph, Knoten gefärbt nach Community, Größe nach PageRank, Brückenknoten markiert. Search, Zoom, Detail-Panel.
-3. **Privacy.** Business-Knoten werden mehrlagig anonymisiert. Topologie bleibt sichtbar.
-4. **Methodische Disziplin.** Befund, Diagnose, Hypothese werden unterschieden.
+1. **Topologische Befunde.** Communities mit Modularitaet, Centrality-Hubs, Brueckenknoten, K-Core-Schichten. Reproduzierbar mit fixen Seeds.
+2. **Pragmatische Sicht.** Triangulation der Link-Communities gegen die Ordnerstruktur, gemessen ueber Reinheit und NMI, mit Ausreisser-Knoten als Diagnose-Kandidaten.
+3. **Visualisierung.** Selfcontained HTML, Force-Directed-Graph, Knoten gefaerbt nach Community, Groesse nach PageRank, Brueckenknoten markiert. Dazu eine Werkbank mit Befundtabelle, Pflege-Triage und Detailpanel.
+4. **Privacy.** Business-Knoten werden mehrlagig anonymisiert. Topologie bleibt sichtbar.
+5. **Methodische Disziplin.** Befund, Diagnose, Hypothese werden unterschieden.
 
-## Architektur (MVP)
+## Architektur
 
-Drei Phasen, je ein Modul in `vault_graph/`.
+Phasen als Module in `vault_graph/`, orchestriert ueber `__main__.py`.
 
 1. **Parse** (`parse.py`): Vault einlesen, Linkgraph extrahieren, Privacy-Filter, `graph.json`
-2. **Topology** (`topology.py`): Centrality-Suite, Louvain-Communities, K-Core, Brückenknoten
-3. **Render** (`render.py`): HTML-Visualisierung
+2. **Topology** (`topology.py`): Centrality-Suite, Louvain-Communities, K-Core, Brueckenknoten
+3. **Pragmatics** (`pragmatics.py`): Triangulation Community gegen Ordner, NMI, Reinheit, Ausreisser, Tag-Kohaesion
+4. **Render** (`render.py`): schlichte HTML-Visualisierung `topology.html`
+5. **Explorer** (`explorer.py`): Werkbank `explorer.html`
 
-Begleitend: `report_parse.py` und `report_topology.py` erzeugen Markdown-Berichte für die Gate-Kontrolle.
+Begleitend erzeugen `report_parse.py`, `report_topology.py` und `report_pragmatics.py` Markdown-Berichte fuer die Gate-Kontrolle.
 
-## Output (MVP)
+## Output
 
 Im `output/`-Verzeichnis (nicht versioniert):
 
 - `data/graph.json`: Linkgraph mit Frontmatter, dead_links, orphans, stats
 - `findings/parse-bericht.md`: deskriptive Parse-Statistiken
-- `findings/topology-bericht.md`: Communities, Centrality-Hubs, Brückenknoten, K-Core
-- `visualisierung/topology.html`: interaktive Force-Directed-Visualisierung
+- `findings/topology-bericht.md`: Communities, Centrality-Hubs, Brueckenknoten, K-Core
+- `findings/triangulation-bericht.md`: Community gegen Ordner, NMI, Reinheit, Ausreisser
+- `visualisierung/topology.html`: schlichte Force-Directed-Visualisierung
+- `visualisierung/explorer.html`: Werkbank mit Tabelle, Triage, Graph, Detailpanel
 
 ## Vorgehen
 
-Iterative Commits, jeder einzeln prüfbar.
+Iterative Commits, jeder einzeln pruefbar. Der laufende Verlauf steht in [journal.md](journal.md).
 
-Stand (`git log --oneline`):
+## Offen, die semantische Sicht
 
-```
-... MVP-Reset und Topology+Render
-ef0b038 Knowledge-Synchronisation mit Stand nach Commit 2
-2761654 Tests und Parse-Bericht
-5b21b8b Parse-Phase implementiert
-af9728a Methodik-Reduktion auf zwei Dokumente
-695343b methodisches Fundament und Modul-Geruest
-```
+Noch nicht gebaut, ausgearbeitet als Entscheidungsvorlage in [aehnlichkeitsanalyse-vorlage.md](aehnlichkeitsanalyse-vorlage.md):
 
-## Stage 2 (nach MVP)
+- Semantische Sicht ueber Text-Embeddings, ein lokales mehrsprachiges Modell, Linking-Kandidaten via Kosinusaehnlichkeit
+- Die semantische Partition als dritte Achse der Triangulation, neben Community und Ordner
+- Ein Diagnose-Bericht latenter Verknuepfungen (aehnliche, aber unverlinkte Notizen)
+- Eine vollstaendige Reproduzierbarkeits-Signatur pro Lauf (Tool-Git-Hash, Versionen, Vault-mtime)
 
-- Semantische Sicht: `semantics.py` mit Sentence-Embeddings (`all-MiniLM-L6-v2`), HDBSCAN-Cluster, Linking-Kandidaten
-- Pragmatische Sicht: `pragmatics.py` mit MOC-Cluster (primär), Tag- und Ordner-Cluster (sekundär)
-- Triangulation: `triangulate.py` mit AMI-Matrix, paarweise Jaccard ≥ 0.6, vier Divergenz-Typen, Querkonzept-Identifikation
-- Vier zusätzliche Findings-Dokumente (Wissensnetzwerke, Querkonzepte, Pflegeschulden, Divergenzen)
-- Reproduzierbarkeits-Metadaten in `analyses.json` (Tool-Git-Hash, Versionen, Vault-mtime)
+## Erfolgskriterien
 
-## Erfolgskriterien (MVP)
+1. **Reproduzierbarkeit.** Zweimaliger Lauf gegen denselben Vault-Stand und denselben Seed fuehrt zu byte-identischen Ausgaben.
+2. **Plausibilitaet.** Die Top-Hubs nach PageRank sind erkennbar zentrale Knoten des Vaults. MOCs landen unter den Top-Brueckenknoten.
+3. **Bedienbarkeit.** Die HTML-Ausgaben laufen im Browser ohne Server-Setup, Search, Zoom und Selektion funktionieren.
 
-1. **Reproduzierbarkeit.** Zweimaliger Lauf gegen denselben Vault-Stand und denselben Seed führt zu identischen Communities und Modularität.
-2. **Plausibilität.** Die Top-Hubs nach PageRank sind erkennbar zentrale Knoten des Vaults. MOCs landen unter den Top-Brückenknoten.
-3. **Bedienbarkeit.** Die HTML-Visualisierung läuft im Browser ohne Server-Setup, Search und Zoom funktionieren.
+## Was das Tool nicht leistet
 
-## Was der MVP nicht leistet
-
-Keine Wertung, keine Handlungsempfehlung, keine inhaltliche Aussage über Dokumente, keine Kausal-Erklärung, keine Triangulation. Begründung in [../METHODIK.md](../METHODIK.md).
+Keine Wertung, keine Handlungsempfehlung, keine inhaltliche Aussage ueber Dokumente, keine Kausal-Erklaerung. Die volle Triangulation aus drei Sichten bleibt offen, solange die semantische Sicht fehlt. Begruendung in [../METHODIK.md](../METHODIK.md).

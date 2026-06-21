@@ -1,12 +1,12 @@
-# vault-graph (MVP)
+# vault-graph
 
-Topologische Analyse und Visualisierung eines Obsidian-Vaults. Linkgraph aus Wikilinks, Louvain-Communities, Centrality-Suite, Brückenknoten, K-Core-Dekomposition. Eine selfcontained HTML-Visualisierung.
+Topologische und pragmatische Analyse und Visualisierung eines Obsidian-Vaults. Linkgraph aus Wikilinks, Louvain-Communities, Centrality-Suite, Brückenknoten, K-Core-Dekomposition, dazu eine Triangulation der Communities gegen die Ordnerstruktur. Zwei selfcontained HTML-Ausgaben.
 
 Methodische Position in [METHODIK.md](METHODIK.md). Operativer Plan in [knowledge/projektkonzept.md](knowledge/projektkonzept.md).
 
-## MVP-Scope
+## Scope
 
-Der MVP arbeitet nur auf der topologischen Sicht. Semantische und pragmatische Sicht plus Triangulation sind als Stage 2 dokumentiert. Der MVP macht damit **keine Aussage über Wissensnetzwerke im vollen Sinn**, sondern liefert topologische Befunde, die Stage 2 stützen oder widerlegen kann.
+Das Tool arbeitet auf zwei Sichten, der topologischen (Linkgraph, Communities, Centrality, Brücken, K-Core) und der pragmatischen mit Triangulation (Community gegen Ordner, NMI, Reinheit, Ausreißer). Offen bleibt die semantische Sicht (inhaltliche Ähnlichkeit über Embeddings), ausgearbeitet als Vorlage in [knowledge/aehnlichkeitsanalyse-vorlage.md](knowledge/aehnlichkeitsanalyse-vorlage.md). Solange sie fehlt, bleibt die volle Triangulation aus drei Sichten unvollständig, die topologischen und pragmatischen Befunde stehen aber für sich.
 
 ## Ausführung
 
@@ -22,7 +22,9 @@ Output:
 - `output/data/graph.json`: Linkgraph mit Frontmatter, tote Links, Orphans, Statistiken
 - `output/findings/parse-bericht.md`: deskriptive Parse-Statistiken
 - `output/findings/topology-bericht.md`: Communities, Centrality-Hubs, Brückenknoten, K-Core
-- `output/visualisierung/topology.html`: interaktive Force-Directed-Visualisierung (Browser öffnen)
+- `output/findings/triangulation-bericht.md`: Community gegen Ordner, NMI, Reinheit, Ausreißer
+- `output/visualisierung/topology.html`: schlichte Force-Directed-Visualisierung (Browser öffnen)
+- `output/visualisierung/explorer.html`: Werkbank mit Befundtabelle, Pflege-Triage, Graph und Detailpanel
 
 ## Privacy
 
@@ -48,7 +50,7 @@ python -m pytest tests/
 |---|---|
 | Parse | abgeschlossen |
 | Topology | abgeschlossen |
-| Render (1 HTML) | abgeschlossen |
-| Semantics (Stage 2) | offen |
-| Pragmatics (Stage 2) | offen |
-| Triangulate (Stage 2) | offen |
+| Render (topology.html plus explorer.html) | abgeschlossen |
+| Pragmatics | abgeschlossen |
+| Triangulation | abgeschlossen |
+| Semantics (Ähnlichkeitsanalyse) | offen, Vorlage liegt vor |

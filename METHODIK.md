@@ -1,39 +1,46 @@
-# Methodik (MVP)
+# Methodik
 
-Die epistemische Position des Tools auf einer Seite. Projektkonzept in [knowledge/projektkonzept.md](knowledge/projektkonzept.md).
+Die epistemische Position des Tools auf einer Seite. Projektkonzept in [knowledge/projektkonzept.md](knowledge/projektkonzept.md), aktueller Bau-Stand in [knowledge/projektwissen.md](knowledge/projektwissen.md).
 
 ## Frage
 
-Welche Strukturen lassen sich im Linkgraph eines Obsidian-Vaults methodisch belastbar identifizieren, und was sagen sie über die gelebte Wissensorganisation?
+Welche Strukturen lassen sich im Linkgraph eines Obsidian-Vaults methodisch belastbar identifizieren, und was sagen sie ueber die gelebte Wissensorganisation?
 
-## Position des MVP
+## Position
 
-Der MVP arbeitet **nur auf der topologischen Sicht**: dem Linkgraph aus Wikilinks. Semantische Sicht (Embeddings) und pragmatische Sicht (MOCs, Tags, Ordner) sind als Stage 2 dokumentiert, aber nicht implementiert.
+Das Tool arbeitet auf zwei von drei Sichten. Die topologische Sicht auf dem Linkgraph aus Wikilinks und die pragmatische Sicht, die die Link-Communities gegen die Ordnerstruktur trianguliert. Die semantische Sicht, inhaltliche Aehnlichkeit ueber Embeddings, ist als Vorlage ausgearbeitet, aber nicht gebaut.
 
-Der MVP macht damit keine Aussagen über *Wissensnetzwerke* im vollen methodischen Sinn (Triangulation aus drei Sichten). Er liefert topologische Befunde: Communities, Hubs, Brückenknoten. Die Frage, ob daraus *Wissensnetzwerke* werden, bleibt offen, bis Stage 2 die zweite und dritte Sicht ergänzt.
+Solange die semantische Sicht fehlt, bleibt die Triangulation aus drei unabhaengigen Sichten unvollstaendig. Die vorhandene Triangulation aus zwei Sichten, Topologie gegen Ordner, traegt bereits. Sie zeigt, wo die gewachsene Link-Struktur und die abgelegte Ordner-Struktur uebereinstimmen und wo sie auseinanderlaufen. Ob aus topologischen Clustern *Wissensnetzwerke* im vollen Sinn werden, bleibt offen, bis die dritte Sicht ergaenzt ist.
 
 ## Topologische Sicht
 
 Operationalisierung:
 
-- **Communities** via Louvain (Blondel et al. 2008) auf dem ungerichteten Projekt des Linkgraphen. Resolution 1.0, Seed 42 für Reproduzierbarkeit. Modularität > 0.3 gilt als substanzielle Community-Struktur (Newman 2006).
-- **Centrality** pro Knoten: Degree (in/out/total), Betweenness, Eigenvector, PageRank, Closeness.
-- **Brückenknoten** via Z-Score-Differenz: Knoten mit hoher Betweenness bei moderater Degree (`betweenness_z - degree_z >= 1.5`). Kandidaten für Querkonzepte.
-- **K-Core-Dekomposition**: höchster k-Core, in dem ein Knoten liegt. Innerster Kern ist der dichteste vernetzte Bereich des Vaults.
+- **Communities** via Louvain (Blondel et al. 2008) auf dem ungerichteten Projekt des Linkgraphen. Resolution 1.0, Seed 42 fuer Reproduzierbarkeit. Modularitaet ueber 0.3 gilt als substanzielle Community-Struktur (Newman 2006).
+- **Centrality** pro Knoten: Degree (in/out/total), Betweenness, Eigenvector, PageRank.
+- **Brueckenknoten** via Z-Score-Differenz: Knoten mit hoher Betweenness bei moderater Degree (`betweenness_z - degree_z >= 1.5`). Kandidaten fuer Querkonzepte.
+- **K-Core-Dekomposition**: hoechster k-Core, in dem ein Knoten liegt. Innerster Kern ist der dichteste vernetzte Bereich des Vaults.
 
-Annahme: Wikilinks materialisieren epistemische Nähe. Schwäche: Wikilinks tragen verschiedene Funktionen (Spezialisierung, Kontrast, Workflow), die Topologie ignoriert.
+Annahme: Wikilinks materialisieren epistemische Naehe. Schwaeche: Wikilinks tragen verschiedene Funktionen (Spezialisierung, Kontrast, Workflow), die Topologie ignoriert.
+
+## Pragmatische Sicht und Triangulation
+
+Die pragmatische Sicht kreuzt zwei unabhaengig entstandene Partitionen des Vaults, die Link-Community (gewachsen aus dem Verlinken) und die Ordnerstruktur (gesetzt beim Ablegen).
+
+- **Uebereinstimmung** gemessen als groessengewichtete mittlere Reinheit der Communities und als Normalized Mutual Information (NMI) zwischen beiden Partitionen.
+- **Ausreisser** sind Knoten, die in einem fremden Ordner liegen, obwohl ihre Community ueberwiegend rein ist (Reinheitsschwelle 0.60). Sie sind Diagnose-Kandidaten, ein thematisch zugehoeriger Knoten an unerwartetem Ablageort.
+
+Die Treffermenge der Ausreisser haengt empfindlich an der Reinheitsschwelle. Das ist methodisch zu berichten, nicht zu glaetten.
 
 ## Drei Aussagetypen
 
-Auch der MVP unterscheidet:
+**Befund.** Datengestuetzt, pruefbar, etwa die Knotenzahl einer Community oder der PageRank eines Hubs. Reproduzierbar gegen denselben Vault-Stand und denselben Tool-Git-Hash.
 
-**Befund.** Datengestützt, prüfbar. "Community 4 enthält 152 Knoten." Reproduzierbar gegen denselben Vault-Stand und denselben Tool-Git-Hash.
+**Diagnose.** Datengestuetzte Auffaelligkeit, die Pflege nahelegt, etwa tote Wikilinks oder ein Ausreisser-Knoten in einem fremden Ordner.
 
-**Diagnose.** Datengestützte Auffälligkeit, die Pflege nahelegt. "259 tote Wikilinks im Vault."
+**Hypothese.** Schwaecher gestuetzt. Ein topologischer Cluster ohne semantische Stuetzung ist eine Hypothese ueber ein Wissensnetzwerk, kein Befund im vollen Sinn.
 
-**Hypothese.** Schwächer gestützt. Topologische Cluster ohne semantische oder pragmatische Stützung sind **Hypothesen über Wissensnetzwerke**, keine Befunde im vollen Sinn.
-
-Nicht zulässig: Wert-Aussagen ("wichtig"), Soll-Aussagen ("sollte gepflegt werden"), inhaltliche Aussagen über Dokumente, Kausal-Erklärungen.
+Nicht zulaessig: Wert-Aussagen ("wichtig"), Soll-Aussagen ("sollte gepflegt werden"), inhaltliche Aussagen ueber Dokumente, Kausal-Erklaerungen.
 
 ## Privacy
 
@@ -48,27 +55,19 @@ Knoten in `Business/Angebote/` werden anonymisiert. Mehrlagig:
 **An anderen Knoten:**
 - Wikilinks, die auf einen anonymisierten Knoten zeigen, werden in deren `body_preview` durch den Anonym-Title ersetzt
 
-Topologie bleibt sichtbar (in/out-Degree, Community). Der MVP exportiert keine Body-Texte über die Visualisierung; Privacy-Leaks über free-text-Body kommen erst mit Stage 2 (Embeddings).
+Topologie bleibt sichtbar (in/out-Degree, Community). Die Visualisierung exportiert keine Body-Volltexte. Ein Embedding-Schritt der kuenftigen semantischen Sicht muesste hinter diesem Privacy-Remap sitzen, nie davor.
 
-Privacy darf nicht zu Glättung führen. Methodisch korrekte Befunde werden ausgegeben, auch wenn unbequem.
+Privacy darf nicht zu Glaettung fuehren. Methodisch korrekte Befunde werden ausgegeben, auch wenn unbequem.
 
 ## Reproduzierbarkeit
 
-Stage-2-Ziel: pro Lauf Tool-Git-Hash, Seeds, Bibliotheks-Versionen, Vault-mtime in `analyses.json`. Der MVP setzt deterministische Seeds (Louvain seed=42) und dokumentiert Schwellwerte als Konstanten in `vault_graph/__main__.py`. Echte Reproduzierbarkeits-Metadaten folgen in Stage 2.
+Deterministische Seeds (Louvain seed=42, resolution=1.0) und Schwellwerte als Konstanten in `vault_graph/__main__.py`. Zweimaliger Lauf gegen denselben Vault-Stand liefert byte-identische Ausgaben. Eine vollstaendige Reproduzierbarkeits-Signatur pro Lauf (Tool-Git-Hash, Bibliotheks-Versionen, Vault-mtime in einer `analyses.json`) ist noch nicht implementiert.
 
-## Was der MVP nicht leistet
+## Was das Tool nicht leistet
 
-- Keine Triangulation. Topologie ist eine Sicht, kein Befund über Wissensnetzwerke.
-- Keine semantische Analyse. Inhaltliche Ähnlichkeit zwischen Knoten wird nicht gemessen.
-- Keine pragmatische Sicht. MOCs werden mit einer minimalen Heuristik markiert, aber nicht als eigenständige Sicht ausgewertet.
-- Keine Wert- oder Empfehlungs-Aussagen.
-
-## Stage 2 (nach MVP)
-
-- Semantische Sicht: Sentence-Embeddings, HDBSCAN-Cluster, Linking-Kandidaten via Kosinusähnlichkeit
-- Pragmatische Sicht: MOC-Cluster (primär), Tag-Cluster, Ordner-Cluster (sekundär/tertiär)
-- Triangulation: AMI-Matrix, paarweise Jaccard ≥ 0.6 als Wissensnetzwerk-Schwelle, vier Divergenz-Typen
-- Vollständige Reproduzierbarkeits-Metadaten
+- Keine semantische Analyse. Inhaltliche Aehnlichkeit zwischen Knoten wird noch nicht gemessen, die Vorlage dazu liegt in [knowledge/aehnlichkeitsanalyse-vorlage.md](knowledge/aehnlichkeitsanalyse-vorlage.md).
+- Keine vollstaendige Triangulation aus drei Sichten, solange die semantische Sicht fehlt.
+- Keine Wert- oder Empfehlungs-Aussagen, keine inhaltlichen oder kausalen Aussagen ueber Dokumente.
 
 ## Quellen
 
@@ -76,6 +75,6 @@ Newman, M. E. J. (2006). Modularity and community structure in networks. *PNAS* 
 
 Blondel, V. D. et al. (2008). Fast unfolding of communities in large networks. *J. Stat. Mech.*
 
-Denzin, N. K. (1978). *The Research Act.* McGraw-Hill. (Referenz für die Triangulations-Position, ab Stage 2 relevant.)
+Denzin, N. K. (1978). *The Research Act.* McGraw-Hill. (Referenz fuer die Triangulations-Position.)
 
-Munafò, M. R. et al. (2017). A manifesto for reproducible science. *Nature Human Behaviour* 1.
+Munafo, M. R. et al. (2017). A manifesto for reproducible science. *Nature Human Behaviour* 1.
