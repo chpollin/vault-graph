@@ -66,6 +66,8 @@ Realisiert sind die Konkretisierungen ueber die seed-Visualisierung hinaus, Face
 
 Die Konkretisierungen ueber die seed-Visualisierung hinaus sind Facetten-Filter nach Community, Tag und type statt nur Volltextsuche, das Sichtbarmachen der Orphans, tote Links als Diagnose-Arbeitsliste, der Sprung ins echte Atom per obsidian-URI und die bidirektionale Selektion zwischen Tabelle und Graph. Die Hybridform wurde gewaehlt, weil sie als einzige gegen die verifizierten realen Zahlen gebaut war und Befund, Diagnose und Hypothese auf drei Flaechen abbildet.
 
+Visueller Funktionstest geleistet. Ein frischer Pipeline-Lauf gegen den lebenden Vault wurde durchgefuehrt und ist deterministisch (graph.json und explorer.html byte-identisch ueber zwei Laeufe), die Testsuite ist gruen. Die explorer.html wurde im Browser gesichtet, mit Screenshot-Spur fuer Befundtabelle, Pflege-Triage und Detail-Panel. Headless gegen das eingebettete PAYLOAD verifiziert, referentiell konsistent (keine haengenden Kanten nach Aufloesung der D3-Objektreferenzen), Privacy sauber (anonymisierte Knoten ohne Inhalts-Metadaten, nicht in der Triage), Stats-Zeile deckungsgleich mit den PAYLOAD-Arrays, Facetten-Filter und Graph-Dimmung konsistent. Der obsidian-Sprung ist pro Knoten geprueft, Schema obsidian://open, Vault-Parameter korrekt, file gleich dem vault-relativen Pfad ohne Endung, Unterordner-Pfade loesen sauber auf, anonymisierte Business-Knoten tragen einen deaktivierten Sprung.
+
 Lehre aus der Exploration. Agenten-Ergebnisse wurden gegen die echten Daten geprueft, nicht uebernommen. Ein Agent hatte zu niedrige Community- und Bruecken-Zahlen gemeldet, die Pruefung gegen PAYLOAD und graph.json korrigierte das. Verify not trust gilt auch fuer die eigenen Subagenten.
 
 ## Offene Operator-Entscheidungen
@@ -73,6 +75,8 @@ Lehre aus der Exploration. Agenten-Ergebnisse wurden gegen die echten Daten gepr
 Der Scope der ersten Stufe ist auf Variante A entschieden und gebaut, der Privacy-Fix ist umgesetzt. Diese Entscheidung war erarbeitbar, weil A read-only ist und keine Territorialkollision erzeugt und weil B ohne vorherige Abgrenzung gar nicht freigebbar ist; A ist der natuerliche erste Schritt und schliesst B nicht aus.
 
 Offen bleiben zwei Operator-Entscheidungen. Variante B (zusaetzlich kuratorisch mit Rueckschreiben in den Vault) macht das Tool zum Schreiber neben der Vault-Lane und wird nicht freigegeben, ohne dass vorher das Schreibterritorium gegen die Vault-Lane abgegrenzt ist. Und der Merge des Session-Branches nach main bleibt gegated, weil main-Push eine stehende Gate-Regel ist.
+
+Die Variante-B-Frage ist als entscheidungsreife Vorlage geschaerft, siehe [variante-b-schreibterritorium.md](variante-b-schreibterritorium.md). Sie zieht das Territorium gegen die obsidian-vault-Lane (Vault-Architekt, Repo gleich Vault, schreibt Steuerdokumente, MOCs und Atome auf main) und schlaegt den minimalen, kollisionsfreien Zuschnitt B1 vor, genau ein maschinell erzeugtes, bei jedem Lauf vollstaendig ueberschriebenes Pflegesignal-Dokument im Vault, read-only fuer die Lane, als Snapshot typisiert, privacy-remapped. Die Disjunktheit haengt an drei zusammen geltenden Eigenschaften, Allein-Besitz, vollstaendige Regeneration, read-only fuer die Lane. Die Scope-Wahl A gegen B und die Stufenwahl bleiben Operator-Entscheidung.
 
 ## Einbettung in die Forschungsleitstelle
 
