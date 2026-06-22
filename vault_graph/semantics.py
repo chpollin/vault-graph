@@ -34,7 +34,14 @@ EmbedFn = Callable[[list[str]], "np.ndarray"]
 
 DEFAULT_MODEL = "intfloat/multilingual-e5-large"
 DEFAULT_TOP_K = 8
-DEFAULT_THRESHOLD = 0.80
+# Latente Verknuepfung ueber gegenseitige k-naechste Nachbarn (mutual kNN), nicht
+# ueber eine absolute Cosinus-Schwelle. Transformer-Embeddings sind anisotrop, ihr
+# Cosinus traegt einen hohen Grundwert (bei e5-large liegen selbst die naechsten
+# Nachbarn im Median bei rund 0.9), eine absolute Schwelle flutet die Diagnose
+# oder verfehlt sie. Das Rangkriterium ist anisotropie-robust. Der Floor schliesst
+# nur schwache Paare in duennen Regionen aus.
+DEFAULT_MIN_COSINE = 0.0
+LATENT_CRITERION = "mutual-knn"
 COSINE_DECIMALS = 4
 
 
@@ -59,54 +66,78 @@ def gather_documents(graph: nx.DiGraph, vault_path: Path) -> list[tuple[str, str
     return docs
 
 
-def compute_similarity(
+def embed_documents(
     graph: nx.DiGraph,
     vault_path: Path,
     embed_fn: EmbedFn,
-    *,
-    top_k: int = DEFAULT_TOP_K,
-    threshold: float = DEFAULT_THRESHOLD,
-    model_name: str = "injected",
-    seed: int = 42,
-) -> dict[str, Any]:
-    """Berechnet je Knoten die top-k semantischen Nachbarn und die latenten
-    Verknuepfungen.
+) -> tuple[list[str], "np.ndarray"]:
+    """Bettet jede nicht-anonymisierte Notiz ein und gibt Keys plus
+    einheitsnormierte Vektoren zurueck, beide nach Key sortiert.
 
-    Args:
-        graph: der geparste Linkgraph, liefert Knoten, Pfade und Link-Distanzen
-        vault_path: Wurzel des Vaults, fuer das frische Einlesen der Volltexte
-        embed_fn: Funktion list[str] -> ndarray (n, d). Injizierbar fuer Tests,
-            in Produktion das lokale Modell (default_embed_fn)
-        top_k: Zahl der gelisteten Nachbarn je Knoten
-        threshold: Cosinus-Mindestwert fuer eine latente Verknuepfung
-        model_name: Provenienz-Marker, der in similarity.json landet
-        seed: Provenienz-Marker fuer den Modell-Lauf
-
-    Returns:
-        Dict mit Provenienz, je-Knoten-Nachbarn und der nach Aehnlichkeit
-        sortierten Liste latenter Verknuepfungen. Vollstaendig deterministisch
-        bei deterministischer embed_fn.
+    Dies ist der teure, nicht-deterministische Schritt (Modell-Lauf). Sein
+    Ergebnis ist das einzufrierende Artefakt, getrennt von der billigen,
+    deterministischen Analyse-Schicht (analyze_similarity).
     """
     docs = gather_documents(graph, vault_path)
     keys = [k for k, _ in docs]
     texts = [t for _, t in docs]
-    n = len(keys)
+    if not keys:
+        return [], np.zeros((0, 0), dtype=np.float64)
+    unit, _dim = _unit_vectors(embed_fn, texts)
+    return keys, unit
+
+
+def analyze_similarity(
+    keys: list[str],
+    unit: "np.ndarray",
+    graph: nx.DiGraph,
+    *,
+    top_k: int = DEFAULT_TOP_K,
+    min_cosine: float = DEFAULT_MIN_COSINE,
+    model_name: str = "injected",
+    seed: int = 42,
+) -> dict[str, Any]:
+    """Deterministische Analyse-Schicht ueber vorab eingebetteten Vektoren.
+
+    Bestimmt je Knoten die top-k Cosinus-Nachbarn und die latenten
+    Verknuepfungen ueber gegenseitige k-naechste Nachbarn (mutual kNN): ein Paar
+    ist latent, wenn beide Notizen einander unter ihren top-k naechsten fuehren,
+    nicht direkt verlinkt sind und den Cosinus-Floor halten. Rangbasiert statt
+    schwellenbasiert, damit anisotropie-robust.
+
+    Args:
+        keys: Knoten-Keys, parallel zu den Zeilen von unit
+        unit: einheitsnormierte Embedding-Matrix (n, d)
+        graph: der Linkgraph, liefert die Link-Distanzen
+        top_k: Zahl der Nachbarn je Knoten und Reichweite des mutual-kNN
+        min_cosine: Cosinus-Floor, schliesst schwache Paare in duennen Regionen aus
+        model_name, seed: Provenienz-Marker
+
+    Returns:
+        Dict mit Provenienz, je-Knoten-Nachbarn und nach Cosinus sortierten
+        latenten Verknuepfungen. Deterministisch bei gegebenem keys und unit.
+    """
     n_anon = sum(
         1 for _, a in graph.nodes(data=True) if a.get("privacy_anonymized")
     )
-
+    n = len(keys)
     if n == 0:
-        return _empty_result(model_name, seed, top_k, threshold, 0, n_anon)
+        return _empty_result(model_name, seed, top_k, min_cosine, 0, n_anon)
 
-    unit, dim = _unit_vectors(embed_fn, texts)
+    # Determinismus: nach Key sortieren, Vektoren mitziehen.
+    order = sorted(range(n), key=lambda i: keys[i])
+    keys = [keys[i] for i in order]
+    unit = np.asarray(unit, dtype=np.float64)[order]
+    dim = int(unit.shape[1])
+
     sim = unit @ unit.T
 
     undirected = graph.to_undirected()
     dist_from = {k: nx.single_source_shortest_path_length(undirected, k) for k in keys}
 
     nodes_out: list[dict[str, Any]] = []
-    latent: list[dict[str, Any]] = []
-    seen_pairs: set[tuple[str, str]] = set()
+    topk_keys: list[set[str]] = []
+    cosine_of: dict[tuple[str, str], float] = {}
 
     for i, key in enumerate(keys):
         row = sim[i]
@@ -118,25 +149,39 @@ def compute_similarity(
             ),
             key=lambda pair: (-pair[0], pair[1]),
         )
-
-        neighbors = [
+        top = ranked[:top_k]
+        nodes_out.append(
             {
-                "key": other,
-                "cosine": cosine,
-                "link_distance": dist_from[key].get(other),
+                "key": key,
+                "neighbors": [
+                    {
+                        "key": other,
+                        "cosine": cosine,
+                        "link_distance": dist_from[key].get(other),
+                    }
+                    for cosine, other in top
+                ],
             }
-            for cosine, other in ranked[:top_k]
-        ]
-        nodes_out.append({"key": key, "neighbors": neighbors})
+        )
+        topk_keys.append({other for _, other in top})
+        for cosine, other in top:
+            cosine_of[(key, other)] = cosine
 
-        for cosine, other in ranked:
-            if cosine < threshold:
-                break
+    latent: list[dict[str, Any]] = []
+    seen_pairs: set[tuple[str, str]] = set()
+    for i, key in enumerate(keys):
+        for other in topk_keys[i]:
+            j = keys.index(other)
+            if key not in topk_keys[j]:
+                continue  # nicht gegenseitig, kein mutual-kNN-Paar
+            pair = (key, other) if key < other else (other, key)
+            if pair in seen_pairs:
+                continue
             distance = dist_from[key].get(other)
             if distance == 1:
                 continue  # bereits direkt verlinkt, keine latente Luecke
-            pair = (key, other) if key < other else (other, key)
-            if pair in seen_pairs:
+            cosine = cosine_of.get((key, other), cosine_of.get((other, key)))
+            if cosine < min_cosine:
                 continue
             seen_pairs.add(pair)
             latent.append(
@@ -153,14 +198,49 @@ def compute_similarity(
     return {
         "model": model_name,
         "seed": seed,
+        "criterion": LATENT_CRITERION,
         "top_k": top_k,
-        "threshold": threshold,
+        "min_cosine": min_cosine,
         "dim": dim,
         "n_embedded": n,
         "n_skipped_anon": n_anon,
         "nodes": nodes_out,
         "latent_links": latent,
     }
+
+
+def compute_similarity(
+    graph: nx.DiGraph,
+    vault_path: Path,
+    embed_fn: EmbedFn,
+    *,
+    top_k: int = DEFAULT_TOP_K,
+    min_cosine: float = DEFAULT_MIN_COSINE,
+    model_name: str = "injected",
+    seed: int = 42,
+) -> dict[str, Any]:
+    """Bequemer Gesamtlauf, bettet ein und analysiert. Embedding und Analyse sind
+    getrennt (embed_documents, analyze_similarity), damit die teure Einbettung
+    einmal eingefroren und die Analyse-Schicht beliebig oft billig und
+    deterministisch nachgerechnet werden kann."""
+    keys, unit = embed_documents(graph, vault_path, embed_fn)
+    return analyze_similarity(
+        keys, unit, graph, top_k=top_k, min_cosine=min_cosine,
+        model_name=model_name, seed=seed,
+    )
+
+
+def save_embeddings(keys: list[str], unit: "np.ndarray", output_path: Path) -> None:
+    """Friert die eingebetteten Vektoren ein, damit die Analyse ohne erneuten
+    Modell-Lauf nachgerechnet werden kann. Keys als Unicode-Array (kein pickle)."""
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    np.savez(output_path, keys=np.array(keys), vectors=np.asarray(unit, dtype=np.float64))
+
+
+def load_embeddings(input_path: Path) -> tuple[list[str], "np.ndarray"]:
+    """Laedt eingefrorene Vektoren zur Wiederholung der Analyse-Schicht."""
+    data = np.load(input_path)
+    return [str(k) for k in data["keys"]], data["vectors"]
 
 
 def write_similarity_json(result: dict[str, Any], output_path: Path) -> None:
@@ -178,24 +258,26 @@ def write_latent_links_report(
     lines = [
         "# Latente Verknuepfungen",
         "",
-        "Diagnose-Report des semantischen Scouts (Schicht 1). Hochaehnliche "
-        "Notizpaare ohne direkten Wikilink, rangiert nach Cosinus-Aehnlichkeit. "
-        "Jede Zeile ist eine Hypothese, kein Befund. Zwei Notizen liegen "
-        "inhaltlich nah, sind aber nicht verlinkt, ob die Verbindung traegt, "
-        "entscheidet die menschliche Sichtung.",
+        "Diagnose-Report des semantischen Scouts (Schicht 1). Notizpaare, die "
+        "einander unter ihren naechsten inhaltlichen Nachbarn fuehren (mutual "
+        "kNN), aber nicht direkt verlinkt sind, rangiert nach Cosinus-"
+        "Aehnlichkeit. Jede Zeile ist eine Hypothese, kein Befund. Zwei Notizen "
+        "liegen inhaltlich nah, sind aber nicht verlinkt, ob die Verbindung "
+        "traegt, entscheidet die menschliche Sichtung.",
         "",
-        f"Modell {result['model']}, Schwelle {result['threshold']}, top-k "
-        f"{result['top_k']}. Eingebettet {result['n_embedded']} Knoten, "
-        f"anonymisierte Business-Knoten ausgenommen ({result['n_skipped_anon']}).",
+        f"Modell {result['model']}, Kriterium {result['criterion']}, top-k "
+        f"{result['top_k']}, Floor {result['min_cosine']}. Eingebettet "
+        f"{result['n_embedded']} Knoten, anonymisierte Business-Knoten "
+        f"ausgenommen ({result['n_skipped_anon']}).",
         "",
     ]
 
     if not latent:
-        lines.append("Keine Paare ueber der Schwelle.")
+        lines.append("Keine gegenseitig-naechsten Paare ohne Link.")
     else:
         shown = min(limit, len(latent))
         lines.append(
-            f"Paare ueber der Schwelle {len(latent)}, gezeigt {shown}."
+            f"Latente Paare {len(latent)}, gezeigt {shown}."
         )
         lines.append("")
         lines.append("| Notiz A | Notiz B | Cosinus | Link-Distanz |")
@@ -279,15 +361,16 @@ def _empty_result(
     model_name: str,
     seed: int,
     top_k: int,
-    threshold: float,
+    min_cosine: float,
     dim: int,
     n_anon: int,
 ) -> dict[str, Any]:
     return {
         "model": model_name,
         "seed": seed,
+        "criterion": LATENT_CRITERION,
         "top_k": top_k,
-        "threshold": threshold,
+        "min_cosine": min_cosine,
         "dim": dim,
         "n_embedded": 0,
         "n_skipped_anon": n_anon,
@@ -309,13 +392,21 @@ def main() -> None:
     print(f"vault-graph: semantics parse {vault_path}")
     graph = parse_vault(vault_path, exclude={"_archive"}, privacy_strict=True)
 
-    print(f"vault-graph: embed (model={model_name}) und top-{DEFAULT_TOP_K}")
-    result = compute_similarity(
-        graph,
-        vault_path,
-        default_embed_fn(model_name),
-        model_name=model_name,
-        seed=seed,
+    # Embedding-Cache. Die Einbettung ist der teure Schritt, die Analyse billig.
+    # Liegt ein Cache vor, nur nachrechnen, sonst frisch einbetten und einfrieren.
+    embeddings_path = output_dir / "data" / "embeddings.npz"
+    if embeddings_path.exists():
+        print(f"vault-graph: lade Embedding-Cache {embeddings_path}")
+        keys, unit = load_embeddings(embeddings_path)
+    else:
+        print(f"vault-graph: embed (model={model_name})")
+        keys, unit = embed_documents(graph, vault_path, default_embed_fn(model_name))
+        save_embeddings(keys, unit, embeddings_path)
+        print(f"  -> {embeddings_path}")
+
+    print(f"vault-graph: analyse top-{DEFAULT_TOP_K}, mutual-kNN")
+    result = analyze_similarity(
+        keys, unit, graph, model_name=model_name, seed=seed,
     )
 
     similarity_path = output_dir / "data" / "similarity.json"
