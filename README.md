@@ -1,12 +1,12 @@
 # vault-graph
 
-Topologische und pragmatische Analyse und Visualisierung eines Obsidian-Vaults. Linkgraph aus Wikilinks, Louvain-Communities, Centrality-Suite, Brückenknoten, K-Core-Dekomposition, dazu eine Triangulation der Communities gegen die Ordnerstruktur. Zwei selfcontained HTML-Ausgaben.
+Topologische und pragmatische Analyse und Visualisierung einer Markdown-Wissensbasis. vault-graph parst einen Obsidian-Vault read-only, extrahiert den Linkgraph aus Wikilinks, rechnet Louvain-Communities, eine Centrality-Suite, Brückenknoten und K-Core-Dekomposition und trianguliert die Communities gegen die Ordnerstruktur. Ausgabe sind zwei selfcontained HTML-Ansichten.
 
-Methodische Position in [METHODIK.md](METHODIK.md). Operativer Plan in [knowledge/projektkonzept.md](knowledge/projektkonzept.md).
+Es ist als forkbares Werkzeug gedacht, das jeder gegen den eigenen Vault konfiguriert. Methodische Position in [knowledge/methodik.md](knowledge/methodik.md), Substanz und Ziele in [knowledge/specification.md](knowledge/specification.md), Wissensbasis-Einstieg über [knowledge/INDEX.md](knowledge/INDEX.md).
 
 ## Scope
 
-Das Tool arbeitet auf zwei Sichten, der topologischen (Linkgraph, Communities, Centrality, Brücken, K-Core) und der pragmatischen mit Triangulation (Community gegen Ordner, NMI, Reinheit, Ausreißer). Offen bleibt die semantische Sicht (inhaltliche Ähnlichkeit über Embeddings), ausgearbeitet als Vorlage in [knowledge/aehnlichkeitsanalyse-vorlage.md](knowledge/aehnlichkeitsanalyse-vorlage.md). Solange sie fehlt, bleibt die volle Triangulation aus drei Sichten unvollständig, die topologischen und pragmatischen Befunde stehen aber für sich.
+Das Tool arbeitet auf zwei laufenden Sichten, der topologischen (Linkgraph, Communities, Centrality, Brücken, K-Core) und der pragmatischen mit Triangulation (Community gegen Ordner, NMI, Reinheit, Ausreißer). Die semantische Sicht (inhaltliche Ähnlichkeit über Embeddings) ist als Modul gebaut, der Modell-Lauf, der ihre Nachbarschaften gegen den lebenden Vault einfriert, steht aus. Solange er aussteht, bleibt die volle Triangulation aus drei Achsen vorbereitet, aber noch nicht geschlossen, die topologischen und pragmatischen Befunde stehen für sich.
 
 ## Ausführung
 
@@ -15,26 +15,24 @@ pip install -r requirements.txt
 python -m vault_graph
 ```
 
-Konfiguration als Konstanten in `vault_graph/__main__.py` (Vault-Pfad, Schwellwerte, Seeds).
+Konfiguration liegt heute als Konstanten in `vault_graph/__main__.py` (Vault-Pfad, Schwellwerte, Seeds). Damit ist diese Instanz an den Vault des Operators gebunden. Vault-Pfad und Privacy-Regeln in echte Konfiguration zu heben, sodass ein Fork ohne Code-Änderung gegen einen fremden Vault läuft, ist als Meilenstein in [knowledge/plan.md](knowledge/plan.md) geführt.
 
-Output:
+Output (gitignored, deterministisch regenerierbar):
 
 - `output/data/graph.json`: Linkgraph mit Frontmatter, tote Links, Orphans, Statistiken
-- `output/findings/parse-bericht.md`: deskriptive Parse-Statistiken
-- `output/findings/topology-bericht.md`: Communities, Centrality-Hubs, Brückenknoten, K-Core
-- `output/findings/triangulation-bericht.md`: Community gegen Ordner, NMI, Reinheit, Ausreißer
-- `output/visualisierung/topology.html`: schlichte Force-Directed-Visualisierung (Browser öffnen)
-- `output/visualisierung/explorer.html`: Werkbank mit Befundtabelle, Pflege-Triage, Graph und Detailpanel
+- `output/findings/parse-bericht.md`, `topology-bericht.md`, `triangulation-bericht.md`: deskriptive Berichte
+- `output/visualisierung/topology.html`: schlichte Force-Directed-Visualisierung
+- `output/visualisierung/explorer.html`: Werkbank mit Graph als Hauptfläche, Linsen, Pflege-Triage und Detailpanel
 
 ## Privacy
 
-Strikt by default. Business-Knoten (`Business/Angebote/`) werden mehrlagig anonymisiert:
+Strikt by default. Welche Knoten anonymisiert werden, ist Konfiguration. Diese Instanz anonymisiert die Knoten in `Business/Angebote/` mehrlagig:
 
 - Titel zu `Angebot-{hash8}`, Body und sensitive Frontmatter (`invoice`, `summary`, `aliases`) entfernt
-- `key` und `path` im exportierten JSON durch den Anonym-Title ersetzt
-- Wikilinks anderer Knoten, die auf einen anonymisierten Knoten zeigen, werden im body_preview durch den Anonym-Title ersetzt
+- `key` und `path` im exportierten JSON durch den Anonym-Titel ersetzt
+- Wikilinks anderer Knoten auf einen anonymisierten Knoten im body_preview maskiert
 
-Topologie (in/out-Degree, Community) bleibt sichtbar. Methodische Konsequenzen in [METHODIK.md](METHODIK.md).
+Die Topologie bleibt sichtbar. Begründung in [knowledge/methodik.md](knowledge/methodik.md), Implementierung in [knowledge/architecture.md](knowledge/architecture.md).
 
 ## Tests
 
@@ -42,7 +40,7 @@ Topologie (in/out-Degree, Community) bleibt sichtbar. Methodische Konsequenzen i
 python -m pytest tests/
 ```
 
-44 Tests, Fokus auf Wikilink-Extraktion, Privacy-Filter (inkl. Cross-References), Alias-Auflösung, nested-archive-Filter, Louvain-Reproduzierbarkeit, Bridge-Detection, Triangulation (NMI, Reinheit, Ausreisser).
+Fokus auf Wikilink-Extraktion, Privacy-Filter, Byte-Determinismus der Pipeline und die Privacy-Invariante der Ausgabe. Garantien und Teststruktur in [knowledge/testing.md](knowledge/testing.md).
 
 ## Status
 
@@ -51,6 +49,7 @@ python -m pytest tests/
 | Parse | abgeschlossen |
 | Topology | abgeschlossen |
 | Render (topology.html plus explorer.html) | abgeschlossen |
-| Pragmatics | abgeschlossen |
-| Triangulation | abgeschlossen |
-| Semantics (Ähnlichkeitsanalyse) | offen, Vorlage liegt vor |
+| Pragmatics und Triangulation | abgeschlossen |
+| Semantik-Scout (Modul) | gebaut, Modell-Lauf offen |
+| Getypte Relationen (WEFT) | gescopt |
+| Generalisierung / Forkbarkeit | geplant |

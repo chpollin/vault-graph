@@ -1,6 +1,26 @@
+---
+title: Journal
+project:
+  name: vault-graph
+  repository: https://github.com/chpollin/vault-graph
+method:
+  name: Promptotyping
+  url: https://lisa.gerda-henkel-stiftung.de/digitale_geschichte_pollin
+status: draft
+created: 2026-06-21
+updated: 2026-06-30
+version: 1.0
+language: de
+related: [specification, architecture, plan, methodik]
+template:
+  name: Vorlage Journal
+  version: 0.1
+  url: https://dhcraft.org/Promptotyping/promptotyping-document/journal
+---
+
 # vault-graph Lane-Journal
 
-Gedaechtnis der Lane fuer den Wiedereinstieg ohne Gespraechskontext. Je Runde ein Eintrag, neueste oben, knapp gehalten auf Verlauf und Entscheidungs-Provenienz. Der kanonische Wissensstand bleibt projektwissen.md, der Plan plan-zentrale-visualisierung.md, die volle Lane-Synthese liegt im forschungsleitstelle-Repo. Alle Eintraege sind Runden desselben Arbeitstags 2026-06-21, die Reihenfolge traegt die Chronologie, der Commit-Anker im Kopf verknuepft die Runde mit dem Git-Stand.
+Gedaechtnis der Lane fuer den Wiedereinstieg ohne Gespraechskontext. Je Runde ein Eintrag, neueste oben, knapp gehalten auf Verlauf und Entscheidungs-Provenienz. Der kanonische Wissensstand liegt in den Funktionsdokumenten ([specification](specification.md), [architecture](architecture.md), [methodik](methodik.md)), der Vorwaertsplan in [plan](plan.md), die volle Lane-Synthese im forschungsleitstelle-Repo. Die Eintraege nennen Datei- und Dokumentnamen im Stand ihres jeweiligen Commits; seit dem knowledge-Refactor vom 2026-06-30 gelten die englischen Dateinamen der Funktionsdokumente. Die Reihenfolge traegt die Chronologie, der Commit-Anker im Kopf verknuepft die Runde mit dem Git-Stand.
 
 ## M3 Semantischer Scout gebaut, M4 gescopt (dieser Commit)
 
